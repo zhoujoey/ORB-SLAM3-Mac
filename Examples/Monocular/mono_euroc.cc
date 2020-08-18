@@ -36,18 +36,18 @@ int main(int argc, char **argv)
 {  
     if(argc < 5)
     {
-        cerr << endl << "Usage: ./mono_euroc path_to_vocabulary path_to_settings path_to_sequence_folder_1 path_to_times_file_1 (path_to_image_folder_2 path_to_times_file_2 ... path_to_image_folder_N path_to_times_file_N) (trajectory_file_name)" << endl;
+        // cerr << endl << "Usage: ./mono_euroc path_to_vocabulary path_to_settings path_to_sequence_folder_1 path_to_times_file_1 (path_to_image_folder_2 path_to_times_file_2 ... path_to_image_folder_N path_to_times_file_N) (trajectory_file_name)" << endl;
         return 1;
     }
 
     const int num_seq = (argc-3)/2;
-    cout << "num_seq = " << num_seq << endl;
+    // cout << "num_seq = " << num_seq << endl;
     bool bFileName= (((argc-3) % 2) == 1);
     string file_name;
     if (bFileName)
     {
         file_name = string(argv[argc-1]);
-        cout << "file name: " << file_name << endl;
+        // cout << "file name: " << file_name << endl;
     }
 
     // Load all sequences:
@@ -63,9 +63,9 @@ int main(int argc, char **argv)
     int tot_images = 0;
     for (seq = 0; seq<num_seq; seq++)
     {
-        cout << "Loading images for sequence " << seq << "...";
+        // cout << "Loading images for sequence " << seq << "...";
         LoadImages(string(argv[(2*seq)+3]) + "/mav0/cam0/data", string(argv[(2*seq)+4]), vstrImageFilenames[seq], vTimestampsCam[seq]);
-        cout << "LOADED!" << endl;
+        // cout << "LOADED!" << endl;
 
         nImages[seq] = vstrImageFilenames[seq].size();
         tot_images += nImages[seq];
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     vector<float> vTimesTrack;
     vTimesTrack.resize(tot_images);
 
-    cout << endl << "-------" << endl;
+    // cout << endl << "-------" << endl;
     cout.precision(17);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
 
         if(seq < num_seq - 1)
         {
-            cout << "Changing the dataset" << endl;
+            // cout << "Changing the dataset" << endl;
 
             SLAM.ChangeDataset();
         }

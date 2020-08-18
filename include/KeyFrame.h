@@ -342,7 +342,7 @@ public:
 
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const bool bRight = false) const;
-    cv::Mat UnprojectStereo(int i);
+
 
     // Image
     bool IsInImage(const float &x, const float &y) const;
@@ -612,7 +612,7 @@ public:
                 else right++;
             }
         }
-        cout << "Point distribution in KeyFrame: left-> " << left << " --- right-> " << right << endl;
+        // cout << "Point distribution in KeyFrame: left-> " << left << " --- right-> " << right << endl;
     }
 
 

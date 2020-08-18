@@ -83,7 +83,6 @@ public:
     void Update(const double *pu); // update in the imu reference
     void UpdateW(const double *pu); // update in the world reference
     Eigen::Vector2d Project(const Eigen::Vector3d &Xw, int cam_idx=0) const; // Mono
-    Eigen::Vector3d ProjectStereo(const Eigen::Vector3d &Xw, int cam_idx=0) const; // Stereo
     bool isDepthPositive(const Eigen::Vector3d &Xw, int cam_idx=0) const;
 
 public:
@@ -416,76 +415,6 @@ public:
 
 public:
     const Eigen::Vector3d Xw;
-    const int cam_idx;
-};
-
-class EdgeStereo : public g2o::BaseBinaryEdge<3,Eigen::Vector3d,g2o::VertexSBAPointXYZ,VertexPose>
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    EdgeStereo(int cam_idx_=0): cam_idx(cam_idx_){}
-
-    virtual bool read(std::istream& is){return false;}
-    virtual bool write(std::ostream& os) const{return false;}
-
-    void computeError(){
-        const g2o::VertexSBAPointXYZ* VPoint = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
-        const VertexPose* VPose = static_cast<const VertexPose*>(_vertices[1]);
-        const Eigen::Vector3d obs(_measurement);
-        _error = obs - VPose->estimate().ProjectStereo(VPoint->estimate(),cam_idx);
-    }
-
-
-    virtual void linearizeOplus();
-
-    Eigen::Matrix<double,3,9> GetJacobian(){
-        linearizeOplus();
-        Eigen::Matrix<double,3,9> J;
-        J.block<3,3>(0,0) = _jacobianOplusXi;
-        J.block<3,6>(0,3) = _jacobianOplusXj;
-        return J;
-    }
-
-    Eigen::Matrix<double,9,9> GetHessian(){
-        linearizeOplus();
-        Eigen::Matrix<double,3,9> J;
-        J.block<3,3>(0,0) = _jacobianOplusXi;
-        J.block<3,6>(0,3) = _jacobianOplusXj;
-        return J.transpose()*information()*J;
-    }
-
-public:
-    const int cam_idx;
-};
-
-
-class EdgeStereoOnlyPose : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexPose>
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    EdgeStereoOnlyPose(const cv::Mat &Xw_, int cam_idx_=0):
-        Xw(Converter::toVector3d(Xw_)), cam_idx(cam_idx_){}
-
-    virtual bool read(std::istream& is){return false;}
-    virtual bool write(std::ostream& os) const{return false;}
-
-    void computeError(){
-        const VertexPose* VPose = static_cast<const VertexPose*>(_vertices[0]);
-        const Eigen::Vector3d obs(_measurement);
-        _error = obs - VPose->estimate().ProjectStereo(Xw, cam_idx);
-    }
-
-    virtual void linearizeOplus();
-
-    Eigen::Matrix<double,6,6> GetHessian(){
-        linearizeOplus();
-        return _jacobianOplusXi.transpose()*information()*_jacobianOplusXi;
-    }
-
-public:
-    const Eigen::Vector3d Xw; // 3D point coordinates
     const int cam_idx;
 };
 

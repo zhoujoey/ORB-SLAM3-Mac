@@ -39,19 +39,19 @@ double ttrack_tot = 0;
 int main(int argc, char **argv)
 {
     const int num_seq = (argc-3)/3;
-    cout << "num_seq = " << num_seq << endl;
+    // cout << "num_seq = " << num_seq << endl;
     bool bFileName= ((argc % 3) == 1);
 
     string file_name;
     if (bFileName)
         file_name = string(argv[argc-1]);
 
-    cout << "file name: " << file_name << endl;
+    // cout << "file name: " << file_name << endl;
 
 
     if(argc < 6)
     {
-        cerr << endl << "Usage: ./mono_inertial_tum_vi path_to_vocabulary path_to_settings path_to_image_folder_1 path_to_times_file_1 path_to_imu_data_1 (path_to_image_folder_2 path_to_times_file_2 path_to_imu_data_2 ... path_to_image_folder_N path_to_times_file_N path_to_imu_data_N) (trajectory_file_name)" << endl;
+        // cerr << endl << "Usage: ./mono_inertial_tum_vi path_to_vocabulary path_to_settings path_to_image_folder_1 path_to_times_file_1 path_to_imu_data_1 (path_to_image_folder_2 path_to_times_file_2 path_to_imu_data_2 ... path_to_image_folder_N path_to_times_file_N path_to_imu_data_N) (trajectory_file_name)" << endl;
         return 1;
     }
 
@@ -77,13 +77,13 @@ int main(int argc, char **argv)
     int tot_images = 0;
     for (seq = 0; seq<num_seq; seq++)
     {
-        cout << "Loading images for sequence " << seq << "...";
+        // cout << "Loading images for sequence " << seq << "...";
         LoadImages(string(argv[3*(seq+1)]), string(argv[3*(seq+1)+1]), vstrImageFilenames[seq], vTimestampsCam[seq]);
         cout << "LOADED!" << endl;
 
-        cout << "Loading IMU for sequence " << seq << "...";
+        // cout << "Loading IMU for sequence " << seq << "...";
         LoadIMU(string(argv[3*(seq+1)+2]), vTimestampsImu[seq], vAcc[seq], vGyro[seq]);
-        cout << "LOADED!" << endl;
+        // cout << "LOADED!" << endl;
 
         nImages[seq] = vstrImageFilenames[seq].size();
         tot_images += nImages[seq];
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     vector<float> vTimesTrack;
     vTimesTrack.resize(tot_images);
 
-    cout << endl << "-------" << endl;
+    // cout << endl << "-------" << endl;
     cout.precision(17);
 
     /*cout << "Start processing sequence ..." << endl;
@@ -237,9 +237,9 @@ int main(int argc, char **argv)
     {
         totaltime+=vTimesTrack[ni];
     }
-    cout << "-------" << endl << endl;
-    cout << "median tracking time: " << vTimesTrack[nImages[0]/2] << endl;
-    cout << "mean tracking time: " << totaltime/proccIm << endl;
+    // cout << "-------" << endl << endl;
+    // cout << "median tracking time: " << vTimesTrack[nImages[0]/2] << endl;
+    // cout << "mean tracking time: " << totaltime/proccIm << endl;
 
     /*const string kf_file =  "kf_" + ss.str() + ".txt";
     const string f_file =  "f_" + ss.str() + ".txt";
@@ -254,8 +254,8 @@ void LoadImages(const string &strImagePath, const string &strPathTimes,
                 vector<string> &vstrImages, vector<double> &vTimeStamps)
 {
     ifstream fTimes;
-    cout << strImagePath << endl;
-    cout << strPathTimes << endl;
+    // cout << strImagePath << endl;
+    // cout << strPathTimes << endl;
     fTimes.open(strPathTimes.c_str());
     vTimeStamps.reserve(5000);
     vstrImages.reserve(5000);

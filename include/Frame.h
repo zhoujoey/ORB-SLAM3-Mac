@@ -20,8 +20,6 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-//#define SAVE_TIMES
-
 #include<vector>
 
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
@@ -110,10 +108,6 @@ public:
     // Search a match for each keypoint in the left image to a keypoint in the right image.
     // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
     void ComputeStereoMatches();
-
-
-    // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
-    cv::Mat UnprojectStereo(const int &i);
 
     ConstraintPoseImu* mpcpi;
 
@@ -295,7 +289,6 @@ public:
 
     bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
 
-    cv::Mat UnprojectStereoFishEye(const int &i);
 
     cv::Mat imgLeft, imgRight;
 
@@ -308,7 +301,7 @@ public:
                 else right++;
             }
         }
-        cout << "Point distribution in Frame: left-> " << left << " --- right-> " << right << endl;
+        // cout << "Point distribution in Frame: left-> " << left << " --- right-> " << right << endl;
     }
 };
 

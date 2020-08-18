@@ -133,12 +133,6 @@ int ORBmatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
                     if(bestLevel!=bestLevel2 || bestDist<=mfNNratio*bestDist2){
                         F.mvpMapPoints[bestIdx]=pMP;
 
-                        if(F.Nleft != -1 && F.mvLeftToRightMatch[bestIdx] != -1){ //Also match with the stereo observation at right camera
-                            F.mvpMapPoints[F.mvLeftToRightMatch[bestIdx] + F.Nleft] = pMP;
-                            nmatches++;
-                            right++;
-                        }
-
                         nmatches++;
                         left++;
                     }
@@ -199,12 +193,6 @@ int ORBmatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
                 {
                     if(bestLevel==bestLevel2 && bestDist>mfNNratio*bestDist2)
                         continue;
-
-                    if(F.Nleft != -1 && F.mvRightToLeftMatch[bestIdx] != -1){ //Also match with the stereo observation at right camera
-                        F.mvpMapPoints[F.mvRightToLeftMatch[bestIdx]] = pMP;
-                        nmatches++;
-                        left++;
-                    }
 
 
                     F.mvpMapPoints[bestIdx + F.Nleft]=pMP;
@@ -1042,12 +1030,6 @@ int ORBmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2, cv::Mat F
                     continue;
                 }
 
-                const bool bStereo1 = (!pKF1->mpCamera2 && pKF1->mvuRight[idx1]>=0);
-
-                if(bOnlyStereo)
-                    if(!bStereo1)
-                        continue;
-
 
                 const cv::KeyPoint &kp1 = (pKF1 -> NLeft == -1) ? pKF1->mvKeysUn[idx1]
                                                                 : (idx1 < pKF1 -> NLeft) ? pKF1 -> mvKeys[idx1]
@@ -1071,11 +1053,6 @@ int ORBmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2, cv::Mat F
                     if(vbMatched2[idx2] || pMP2)
                         continue;
 
-                    const bool bStereo2 = (!pKF2->mpCamera2 &&  pKF2->mvuRight[idx2]>=0);
-
-                    if(bOnlyStereo)
-                        if(!bStereo2)
-                            continue;
                     
                     const cv::Mat &d2 = pKF2->mDescriptors.row(idx2);
                     
@@ -1090,47 +1067,13 @@ int ORBmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2, cv::Mat F
                     const bool bRight2 = (pKF2 -> NLeft == -1 || idx2 < pKF2 -> NLeft) ? false
                                                                                        : true;
 
-                    if(!bStereo1 && !bStereo2 && !pKF1->mpCamera2)
-                    {
+
                         const float distex = ep.x-kp2.pt.x;
                         const float distey = ep.y-kp2.pt.y;
                         if(distex*distex+distey*distey<100*pKF2->mvScaleFactors[kp2.octave])
                         {
                             continue;
                         }
-                    }
-
-                    if(pKF1->mpCamera2 && pKF2->mpCamera2){
-                        if(bRight1 && bRight2){
-                            R12 = Rrr;
-                            t12 = trr;
-
-                            pCamera1 = pKF1->mpCamera2;
-                            pCamera2 = pKF2->mpCamera2;
-                        }
-                        else if(bRight1 && !bRight2){
-                            R12 = Rrl;
-                            t12 = trl;
-
-                            pCamera1 = pKF1->mpCamera2;
-                            pCamera2 = pKF2->mpCamera;
-                        }
-                        else if(!bRight1 && bRight2){
-                            R12 = Rlr;
-                            t12 = tlr;
-
-                            pCamera1 = pKF1->mpCamera;
-                            pCamera2 = pKF2->mpCamera2;
-                        }
-                        else{
-                            R12 = Rll;
-                            t12 = tll;
-
-                            pCamera1 = pKF1->mpCamera;
-                            pCamera2 = pKF2->mpCamera;
-                        }
-
-                    }
 
 
                     if(pCamera1->epipolarConstrain(pCamera2,kp1,kp2,R12,t12,pKF1->mvLevelSigma2[kp1.octave],pKF2->mvLevelSigma2[kp2.octave])||bCoarse) // MODIFICATION_2
@@ -1534,22 +1477,7 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
 
-            if(pKF->mvuRight[idx]>=0)
-            {
-                // Check reprojection error in stereo
-                const float &kpx = kp.pt.x;
-                const float &kpy = kp.pt.y;
-                const float &kpr = pKF->mvuRight[idx];
-                const float ex = uv.x-kpx;
-                const float ey = uv.y-kpy;
-                const float er = ur-kpr;
-                const float e2 = ex*ex+ey*ey+er*er;
 
-                if(e2*pKF->mvInvLevelSigma2[kpLevel]>7.8)
-                    continue;
-            }
-            else
-            {
                 const float &kpx = kp.pt.x;
                 const float &kpy = kp.pt.y;
                 const float ex = uv.x-kpx;
@@ -1558,7 +1486,6 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
 
                 if(e2*pKF->mvInvLevelSigma2[kpLevel]>5.99)
                     continue;
-            }
 
             if(bRight) idx += pKF->NLeft;
 

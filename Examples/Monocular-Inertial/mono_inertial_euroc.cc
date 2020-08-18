@@ -47,13 +47,13 @@ int main(int argc, char *argv[])
     }
 
     const int num_seq = (argc-3)/2;
-    cout << "num_seq = " << num_seq << endl;
+    // cout << "num_seq = " << num_seq << endl;
     bool bFileName= (((argc-3) % 2) == 1);
     string file_name;
     if (bFileName)
     {
         file_name = string(argv[argc-1]);
-        cout << "file name: " << file_name << endl;
+        // cout << "file name: " << file_name << endl;
     }
 
     // Load all sequences:
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     int tot_images = 0;
     for (seq = 0; seq<num_seq; seq++)
     {
-        cout << "Loading images for sequence " << seq << "...";
+        // cout << "Loading images for sequence " << seq << "...";
 
         string pathSeq(argv[(2*seq) + 3]);
         string pathTimeStamps(argv[(2*seq) + 4]);
@@ -86,11 +86,11 @@ int main(int argc, char *argv[])
         string pathImu = pathSeq + "/mav0/imu0/data.csv";
 
         LoadImages(pathCam0, pathTimeStamps, vstrImageFilenames[seq], vTimestampsCam[seq]);
-        cout << "LOADED!" << endl;
+        // cout << "LOADED!" << endl;
 
-        cout << "Loading IMU for sequence " << seq << "...";
+        // cout << "Loading IMU for sequence " << seq << "...";
         LoadIMU(pathImu, vTimestampsImu[seq], vAcc[seq], vGyro[seq]);
-        cout << "LOADED!" << endl;
+        // cout << "LOADED!" << endl;
 
         nImages[seq] = vstrImageFilenames[seq].size();
         tot_images += nImages[seq];
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
         }
         if(seq < num_seq - 1)
         {
-            cout << "Changing the dataset" << endl;
+            // cout << "Changing the dataset" << endl;
 
             SLAM.ChangeDataset();
         }

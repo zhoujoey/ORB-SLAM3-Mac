@@ -126,18 +126,18 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mMinFrames = 0;
     mMaxFrames = fps;
 
-    cout << endl << "Camera Parameters: " << endl;
-    cout << "- fx: " << fx << endl;
-    cout << "- fy: " << fy << endl;
-    cout << "- cx: " << cx << endl;
-    cout << "- cy: " << cy << endl;
-    cout << "- bf: " << mbf << endl;
-    cout << "- k1: " << DistCoef.at<float>(0) << endl;
-    cout << "- k2: " << DistCoef.at<float>(1) << endl;
+    // cout << endl << "Camera Parameters: " << endl;
+    // cout << "- fx: " << fx << endl;
+    // cout << "- fy: " << fy << endl;
+    // cout << "- cx: " << cx << endl;
+    // cout << "- cy: " << cy << endl;
+    // cout << "- bf: " << mbf << endl;
+    // cout << "- k1: " << DistCoef.at<float>(0) << endl;
+    // cout << "- k2: " << DistCoef.at<float>(1) << endl;
 
 
-    cout << "- p1: " << DistCoef.at<float>(2) << endl;
-    cout << "- p2: " << DistCoef.at<float>(3) << endl;
+    // cout << "- p1: " << DistCoef.at<float>(2) << endl;
+    // cout << "- p2: " << DistCoef.at<float>(3) << endl;
 
     if(DistCoef.rows==5)
         cout << "- k3: " << DistCoef.at<float>(4) << endl;
@@ -150,10 +150,10 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     int nRGB = fSettings["Camera.RGB"];
     mbRGB = nRGB;
 
-    if(mbRGB)
-        cout << "- color order: RGB (ignored if grayscale)" << endl;
-    else
-        cout << "- color order: BGR (ignored if grayscale)" << endl;
+    // if(mbRGB)
+    //     cout << "- color order: RGB (ignored if grayscale)" << endl;
+    // else
+    //     cout << "- color order: BGR (ignored if grayscale)" << endl;
 
     // Load ORB parameters
 
@@ -170,12 +170,12 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 
     initID = 0; lastID = 0;
 
-    cout << endl << "ORB Extractor Parameters: " << endl;
-    cout << "- Number of Features: " << nFeatures << endl;
-    cout << "- Scale Levels: " << nLevels << endl;
-    cout << "- Scale Factor: " << fScaleFactor << endl;
-    cout << "- Initial Fast Threshold: " << fIniThFAST << endl;
-    cout << "- Minimum Fast Threshold: " << fMinThFAST << endl;
+    // cout << endl << "ORB Extractor Parameters: " << endl;
+    // cout << "- Number of Features: " << nFeatures << endl;
+    // cout << "- Scale Levels: " << nLevels << endl;
+    // cout << "- Scale Factor: " << fScaleFactor << endl;
+    // cout << "- Initial Fast Threshold: " << fIniThFAST << endl;
+    // cout << "- Minimum Fast Threshold: " << fMinThFAST << endl;
 
 
 
@@ -195,12 +195,12 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
         fSettings["IMU.AccWalk"] >> Naw;
 
         const float sf = sqrt(freq);
-        cout << endl;
-        cout << "IMU frequency: " << freq << " Hz" << endl;
-        cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
-        cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << endl;
-        cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
-        cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << endl;
+        // cout << endl;
+        // cout << "IMU frequency: " << freq << " Hz" << endl;
+        // cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
+        // cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << endl;
+        // cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
+        // cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << endl;
 
         mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
 
@@ -226,7 +226,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 
 #ifdef SAVE_TIMES
     f_track_times.open("tracking_times.txt");
-    f_track_times << "# ORB_Ext(ms), Stereo matching(ms), Preintegrate_IMU(ms), Pose pred(ms), LocalMap_track(ms), NewKF_dec(ms)" << endl;
+    f_track_times << "# ORB_Ext(ms), matching(ms), Preintegrate_IMU(ms), Pose pred(ms), LocalMap_track(ms), NewKF_dec(ms)" << endl;
     f_track_times << fixed ;
 #endif
 }
@@ -319,7 +319,7 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
 
 #ifdef SAVE_TIMES
     f_track_times << mCurrentFrame.mTimeORB_Ext << ",";
-    f_track_times << mCurrentFrame.mTimeStereoMatch << ",";
+    f_track_times << mCurrentFrame.mTimeMatch << ",";
     f_track_times << mTime_PreIntIMU << ",";
     f_track_times << mTime_PosePred << ",";
     f_track_times << mTime_LocalMapTrack << ",";
@@ -1492,62 +1492,6 @@ void Tracking::UpdateLastFrame()
 
     if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR || !mbOnlyTracking)
         return;
-
-    // Create "visual odometry" MapPoints
-    // We sort points according to their measured depth by the stereo/RGB-D sensor
-    vector<pair<float,int> > vDepthIdx;
-    vDepthIdx.reserve(mLastFrame.N);
-    for(int i=0; i<mLastFrame.N;i++)
-    {
-        float z = mLastFrame.mvDepth[i];
-        if(z>0)
-        {
-            vDepthIdx.push_back(make_pair(z,i));
-        }
-    }
-
-    if(vDepthIdx.empty())
-        return;
-
-    sort(vDepthIdx.begin(),vDepthIdx.end());
-
-    // We insert all close points (depth<mThDepth)
-    // If less than 100 close points, we insert the 100 closest ones.
-    int nPoints = 0;
-    for(size_t j=0; j<vDepthIdx.size();j++)
-    {
-        int i = vDepthIdx[j].second;
-
-        bool bCreateNew = false;
-
-        MapPoint* pMP = mLastFrame.mvpMapPoints[i];
-        if(!pMP)
-            bCreateNew = true;
-        else if(pMP->Observations()<1)
-        {
-            bCreateNew = true;
-        }
-
-        if(bCreateNew)
-        {
-            cv::Mat x3D = mLastFrame.UnprojectStereo(i);
-            MapPoint* pNewMP = new MapPoint(x3D,mpAtlas->GetCurrentMap(),&mLastFrame,i);
-
-            mLastFrame.mvpMapPoints[i]=pNewMP;
-
-            mlpTemporalPoints.push_back(pNewMP);
-            nPoints++;
-        }
-        else
-        {
-            nPoints++;
-        }
-
-        if(vDepthIdx[j].first>mThDepth && nPoints>100)
-        {
-            break;
-        }
-    }
 }
 
 bool Tracking::TrackWithMotionModel()
@@ -1907,93 +1851,6 @@ void Tracking::CreateNewKeyFrame()
     if (mSensor == System::IMU_MONOCULAR )
     {
         mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKF->GetImuBias(),pKF->mImuCalib);
-    }
-
-    if(mSensor!=System::MONOCULAR && mSensor != System::IMU_MONOCULAR) // TODO check if incluide 
-    {
-        mCurrentFrame.UpdatePoseMatrices();
-        // cout << "create new MPs" << endl;
-        // We sort points by the measured depth by the stereo/RGBD sensor.
-        // We create all those MapPoints whose depth < mThDepth.
-        // If there are less than 100 close points we create the 100 closest.
-        int maxPoint = 100;
-
-        vector<pair<float,int> > vDepthIdx;
-        int N = (mCurrentFrame.Nleft != -1) ? mCurrentFrame.Nleft : mCurrentFrame.N;
-        vDepthIdx.reserve(mCurrentFrame.N);
-        for(int i=0; i<N; i++)
-        {
-            float z = mCurrentFrame.mvDepth[i];
-            if(z>0)
-            {
-                vDepthIdx.push_back(make_pair(z,i));
-            }
-        }
-
-        if(!vDepthIdx.empty())
-        {
-            sort(vDepthIdx.begin(),vDepthIdx.end());
-
-            int nPoints = 0;
-            for(size_t j=0; j<vDepthIdx.size();j++)
-            {
-                int i = vDepthIdx[j].second;
-
-                bool bCreateNew = false;
-
-                MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
-                if(!pMP)
-                    bCreateNew = true;
-                else if(pMP->Observations()<1)
-                {
-                    bCreateNew = true;
-                    mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint*>(NULL);
-                }
-
-                if(bCreateNew)
-                {
-                    cv::Mat x3D;
-
-                    if(mCurrentFrame.Nleft == -1){
-                        x3D = mCurrentFrame.UnprojectStereo(i);
-                    }
-                    else{
-                        x3D = mCurrentFrame.UnprojectStereoFishEye(i);
-                    }
-
-                    MapPoint* pNewMP = new MapPoint(x3D,pKF,mpAtlas->GetCurrentMap());
-                    pNewMP->AddObservation(pKF,i);
-
-                    //Check if it is a stereo observation in order to not
-                    //duplicate mappoints
-                    if(mCurrentFrame.Nleft != -1 && mCurrentFrame.mvLeftToRightMatch[i] >= 0){
-                        mCurrentFrame.mvpMapPoints[mCurrentFrame.Nleft + mCurrentFrame.mvLeftToRightMatch[i]]=pNewMP;
-                        pNewMP->AddObservation(pKF,mCurrentFrame.Nleft + mCurrentFrame.mvLeftToRightMatch[i]);
-                        pKF->AddMapPoint(pNewMP,mCurrentFrame.Nleft + mCurrentFrame.mvLeftToRightMatch[i]);
-                    }
-
-                    pKF->AddMapPoint(pNewMP,i);
-                    pNewMP->ComputeDistinctiveDescriptors();
-                    pNewMP->UpdateNormalAndDepth();
-                    mpAtlas->AddMapPoint(pNewMP);
-
-                    mCurrentFrame.mvpMapPoints[i]=pNewMP;
-                    nPoints++;
-                }
-                else
-                {
-                    nPoints++; // TODO check ???
-                }
-
-                if(vDepthIdx[j].first>mThDepth && nPoints>maxPoint)
-                {
-                    break;
-                }
-            }
-
-            Verbose::PrintMess("new mps for stereo KF: " + to_string(nPoints), Verbose::VERBOSITY_NORMAL);
-
-        }
     }
 
 
@@ -2734,247 +2591,6 @@ cv::Mat Tracking::ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2)
 
 
     return K1.t().inv()*t12x*R12*K2.inv();
-}
-
-
-void Tracking::CreateNewMapPoints()
-{
-    // Retrieve neighbor keyframes in covisibility graph
-    const vector<KeyFrame*> vpKFs = mpAtlas->GetAllKeyFrames();
-
-    ORBmatcher matcher(0.6,false);
-
-    cv::Mat Rcw1 = mpLastKeyFrame->GetRotation();
-    cv::Mat Rwc1 = Rcw1.t();
-    cv::Mat tcw1 = mpLastKeyFrame->GetTranslation();
-    cv::Mat Tcw1(3,4,CV_32F);
-    Rcw1.copyTo(Tcw1.colRange(0,3));
-    tcw1.copyTo(Tcw1.col(3));
-    cv::Mat Ow1 = mpLastKeyFrame->GetCameraCenter();
-
-    const float &fx1 = mpLastKeyFrame->fx;
-    const float &fy1 = mpLastKeyFrame->fy;
-    const float &cx1 = mpLastKeyFrame->cx;
-    const float &cy1 = mpLastKeyFrame->cy;
-    const float &invfx1 = mpLastKeyFrame->invfx;
-    const float &invfy1 = mpLastKeyFrame->invfy;
-
-    const float ratioFactor = 1.5f*mpLastKeyFrame->mfScaleFactor;
-
-    int nnew=0;
-
-    // Search matches with epipolar restriction and triangulate
-    for(size_t i=0; i<vpKFs.size(); i++)
-    {
-        KeyFrame* pKF2 = vpKFs[i];
-        if(pKF2==mpLastKeyFrame)
-            continue;
-
-        // Check first that baseline is not too short
-        cv::Mat Ow2 = pKF2->GetCameraCenter();
-        cv::Mat vBaseline = Ow2-Ow1;
-        const float baseline = cv::norm(vBaseline);
-
-        if((mSensor!=System::MONOCULAR)||(mSensor!=System::IMU_MONOCULAR))
-        {
-            if(baseline<pKF2->mb)
-            continue;
-        }
-        else
-        {
-            const float medianDepthKF2 = pKF2->ComputeSceneMedianDepth(2);
-            const float ratioBaselineDepth = baseline/medianDepthKF2;
-
-            if(ratioBaselineDepth<0.01)
-                continue;
-        }
-
-        // Compute Fundamental Matrix
-        cv::Mat F12 = ComputeF12(mpLastKeyFrame,pKF2);
-
-        // Search matches that fullfil epipolar constraint
-        vector<pair<size_t,size_t> > vMatchedIndices;
-        matcher.SearchForTriangulation(mpLastKeyFrame,pKF2,F12,vMatchedIndices,false);
-
-        cv::Mat Rcw2 = pKF2->GetRotation();
-        cv::Mat Rwc2 = Rcw2.t();
-        cv::Mat tcw2 = pKF2->GetTranslation();
-        cv::Mat Tcw2(3,4,CV_32F);
-        Rcw2.copyTo(Tcw2.colRange(0,3));
-        tcw2.copyTo(Tcw2.col(3));
-
-        const float &fx2 = pKF2->fx;
-        const float &fy2 = pKF2->fy;
-        const float &cx2 = pKF2->cx;
-        const float &cy2 = pKF2->cy;
-        const float &invfx2 = pKF2->invfx;
-        const float &invfy2 = pKF2->invfy;
-
-        // Triangulate each match
-        const int nmatches = vMatchedIndices.size();
-        for(int ikp=0; ikp<nmatches; ikp++)
-        {
-            const int &idx1 = vMatchedIndices[ikp].first;
-            const int &idx2 = vMatchedIndices[ikp].second;
-
-            const cv::KeyPoint &kp1 = mpLastKeyFrame->mvKeysUn[idx1];
-            const float kp1_ur=mpLastKeyFrame->mvuRight[idx1];
-            bool bStereo1 = kp1_ur>=0;
-
-            const cv::KeyPoint &kp2 = pKF2->mvKeysUn[idx2];
-            const float kp2_ur = pKF2->mvuRight[idx2];
-            bool bStereo2 = kp2_ur>=0;
-
-            // Check parallax between rays
-            cv::Mat xn1 = (cv::Mat_<float>(3,1) << (kp1.pt.x-cx1)*invfx1, (kp1.pt.y-cy1)*invfy1, 1.0);
-            cv::Mat xn2 = (cv::Mat_<float>(3,1) << (kp2.pt.x-cx2)*invfx2, (kp2.pt.y-cy2)*invfy2, 1.0);
-
-            cv::Mat ray1 = Rwc1*xn1;
-            cv::Mat ray2 = Rwc2*xn2;
-            const float cosParallaxRays = ray1.dot(ray2)/(cv::norm(ray1)*cv::norm(ray2));
-
-            float cosParallaxStereo = cosParallaxRays+1;
-            float cosParallaxStereo1 = cosParallaxStereo;
-            float cosParallaxStereo2 = cosParallaxStereo;
-
-            if(bStereo1)
-                cosParallaxStereo1 = cos(2*atan2(mpLastKeyFrame->mb/2,mpLastKeyFrame->mvDepth[idx1]));
-            else if(bStereo2)
-                cosParallaxStereo2 = cos(2*atan2(pKF2->mb/2,pKF2->mvDepth[idx2]));
-
-            cosParallaxStereo = min(cosParallaxStereo1,cosParallaxStereo2);
-
-            cv::Mat x3D;
-            if(cosParallaxRays<cosParallaxStereo && cosParallaxRays>0 && (bStereo1 || bStereo2 || cosParallaxRays<0.9998))
-            {
-                // Linear Triangulation Method
-                cv::Mat A(4,4,CV_32F);
-                A.row(0) = xn1.at<float>(0)*Tcw1.row(2)-Tcw1.row(0);
-                A.row(1) = xn1.at<float>(1)*Tcw1.row(2)-Tcw1.row(1);
-                A.row(2) = xn2.at<float>(0)*Tcw2.row(2)-Tcw2.row(0);
-                A.row(3) = xn2.at<float>(1)*Tcw2.row(2)-Tcw2.row(1);
-
-                cv::Mat w,u,vt;
-                cv::SVD::compute(A,w,u,vt,cv::SVD::MODIFY_A| cv::SVD::FULL_UV);
-
-                x3D = vt.row(3).t();
-
-                if(x3D.at<float>(3)==0)
-                    continue;
-
-                // Euclidean coordinates
-                x3D = x3D.rowRange(0,3)/x3D.at<float>(3);
-
-            }
-            else if(bStereo1 && cosParallaxStereo1<cosParallaxStereo2)
-            {
-                x3D = mpLastKeyFrame->UnprojectStereo(idx1);
-            }
-            else if(bStereo2 && cosParallaxStereo2<cosParallaxStereo1)
-            {
-                x3D = pKF2->UnprojectStereo(idx2);
-            }
-            else
-                continue; //No stereo and very low parallax
-
-            cv::Mat x3Dt = x3D.t();
-
-            //Check triangulation in front of cameras
-            float z1 = Rcw1.row(2).dot(x3Dt)+tcw1.at<float>(2);
-            if(z1<=0)
-                continue;
-
-            float z2 = Rcw2.row(2).dot(x3Dt)+tcw2.at<float>(2);
-            if(z2<=0)
-                continue;
-
-            //Check reprojection error in first keyframe
-            const float &sigmaSquare1 = mpLastKeyFrame->mvLevelSigma2[kp1.octave];
-            const float x1 = Rcw1.row(0).dot(x3Dt)+tcw1.at<float>(0);
-            const float y1 = Rcw1.row(1).dot(x3Dt)+tcw1.at<float>(1);
-            const float invz1 = 1.0/z1;
-
-            if(!bStereo1)
-            {
-                float u1 = fx1*x1*invz1+cx1;
-                float v1 = fy1*y1*invz1+cy1;
-                float errX1 = u1 - kp1.pt.x;
-                float errY1 = v1 - kp1.pt.y;
-                if((errX1*errX1+errY1*errY1)>5.991*sigmaSquare1)
-                    continue;
-            }
-            else
-            {
-                float u1 = fx1*x1*invz1+cx1;
-                float u1_r = u1 - mpLastKeyFrame->mbf*invz1;
-                float v1 = fy1*y1*invz1+cy1;
-                float errX1 = u1 - kp1.pt.x;
-                float errY1 = v1 - kp1.pt.y;
-                float errX1_r = u1_r - kp1_ur;
-                if((errX1*errX1+errY1*errY1+errX1_r*errX1_r)>7.8*sigmaSquare1)
-                    continue;
-            }
-
-            //Check reprojection error in second keyframe
-            const float sigmaSquare2 = pKF2->mvLevelSigma2[kp2.octave];
-            const float x2 = Rcw2.row(0).dot(x3Dt)+tcw2.at<float>(0);
-            const float y2 = Rcw2.row(1).dot(x3Dt)+tcw2.at<float>(1);
-            const float invz2 = 1.0/z2;
-            if(!bStereo2)
-            {
-                float u2 = fx2*x2*invz2+cx2;
-                float v2 = fy2*y2*invz2+cy2;
-                float errX2 = u2 - kp2.pt.x;
-                float errY2 = v2 - kp2.pt.y;
-                if((errX2*errX2+errY2*errY2)>5.991*sigmaSquare2)
-                    continue;
-            }
-            else
-            {
-                float u2 = fx2*x2*invz2+cx2;
-                float u2_r = u2 - mpLastKeyFrame->mbf*invz2;
-                float v2 = fy2*y2*invz2+cy2;
-                float errX2 = u2 - kp2.pt.x;
-                float errY2 = v2 - kp2.pt.y;
-                float errX2_r = u2_r - kp2_ur;
-                if((errX2*errX2+errY2*errY2+errX2_r*errX2_r)>7.8*sigmaSquare2)
-                    continue;
-            }
-
-            //Check scale consistency
-            cv::Mat normal1 = x3D-Ow1;
-            float dist1 = cv::norm(normal1);
-
-            cv::Mat normal2 = x3D-Ow2;
-            float dist2 = cv::norm(normal2);
-
-            if(dist1==0 || dist2==0)
-                continue;
-
-            const float ratioDist = dist2/dist1;
-            const float ratioOctave = mpLastKeyFrame->mvScaleFactors[kp1.octave]/pKF2->mvScaleFactors[kp2.octave];
-
-            if(ratioDist*ratioFactor<ratioOctave || ratioDist>ratioOctave*ratioFactor)
-                continue;
-
-            // Triangulation is succesfull
-            MapPoint* pMP = new MapPoint(x3D,mpLastKeyFrame,mpAtlas->GetCurrentMap());
-
-            pMP->AddObservation(mpLastKeyFrame,idx1);
-            pMP->AddObservation(pKF2,idx2);
-
-            mpLastKeyFrame->AddMapPoint(pMP,idx1);
-            pKF2->AddMapPoint(pMP,idx2);
-
-            pMP->ComputeDistinctiveDescriptors();
-
-            pMP->UpdateNormalAndDepth();
-
-            mpAtlas->AddMapPoint(pMP);
-            nnew++;
-        }
-    }
-    TrackReferenceKeyFrame();
 }
 
 void Tracking::NewDataset()
