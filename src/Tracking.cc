@@ -244,10 +244,10 @@ void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
     mpLocalMapper=pLocalMapper;
 }
 
-void Tracking::SetLoopClosing(LoopClosing *pLoopClosing)
-{
-    mpLoopClosing=pLoopClosing;
-}
+// void Tracking::SetLoopClosing(LoopClosing *pLoopClosing)
+// {
+//     mpLoopClosing=pLoopClosing;
+// }
 
 void Tracking::SetViewer(Viewer *pViewer)
 {
@@ -2317,7 +2317,7 @@ void Tracking::Reset(bool bLocMap)
 
     // Reset Loop Closing
     Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
-    mpLoopClosing->RequestReset();
+    // mpLoopClosing->RequestReset();
     Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
     // Clear BoW Database
@@ -2381,7 +2381,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
 
     // Reset Loop Closing
     Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
-    mpLoopClosing->RequestResetActiveMap(pMap);
+    // mpLoopClosing->RequestResetActiveMap(pMap);
     Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
     // Clear BoW Database
