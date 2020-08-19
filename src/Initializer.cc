@@ -103,7 +103,7 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
     thread threadH(&Initializer::FindHomography,this,ref(vbMatchesInliersH), ref(SH), ref(H));
     thread threadF(&Initializer::FindFundamental,this,ref(vbMatchesInliersF), ref(SF), ref(F));
 
-    //cout << "5" << endl;
+
 
     // Wait until both threads have finished
     threadH.join();
@@ -112,7 +112,7 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
     // Compute ratio of scores
     float RH = SH/(SH+SF);
 
-    //cout << "6" << endl;
+
 
     float minParallax = 1.0; // 1.0 originally
 
@@ -120,12 +120,12 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
     // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
     if(RH>0.40) // if(RH>0.40)
     {
-        //cout << "Initialization from Homography" << endl;
+
         return ReconstructH(vbMatchesInliersH,H, K,R21,t21,vP3D,vbTriangulated,minParallax,50);
     }
     else //if(pF_HF>0.6)
     {
-        //cout << "Initialization from Fundamental" << endl;
+
         return ReconstructF(vbMatchesInliersF,F,K,R21,t21,vP3D,vbTriangulated,minParallax,50);
     }
 

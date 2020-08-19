@@ -158,7 +158,6 @@ namespace ORB_SLAM3 {
         Jac.at<float>(0, 2) = -mvParameters[0] * fd * p3D.x / (r2 + z2);
         Jac.at<float>(1, 2) = -mvParameters[1] * fd * p3D.y / (r2 + z2);
 
-        std::cout << "CV JAC: " << Jac << std::endl;
 
         return Jac.clone();
     }

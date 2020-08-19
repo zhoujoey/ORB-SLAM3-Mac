@@ -22,10 +22,9 @@
 
 #include "KeyFrame.h"
 #include "LocalMapping.h"
-#include "Atlas.h"
+#include "Map.h"
 #include "ORBVocabulary.h"
 #include "Tracking.h"
-
 #include "KeyFrameDatabase.h"
 
 #include <boost/algorithm/string.hpp>
@@ -52,7 +51,7 @@ public:
 
 public:
 
-    LoopClosing(Atlas* pAtlas, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
+    LoopClosing(Map* pMap, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
 
     void SetTracker(Tracking* pTracker);
 
@@ -82,7 +81,7 @@ public:
 
     bool isFinished();
 
-    Viewer* mpViewer;
+//    Viewer* mpViewer;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -127,7 +126,8 @@ protected:
     bool mbFinished;
     std::mutex mMutexFinish;
 
-    Atlas* mpAtlas;
+   // Atlas* mpAtlas;
+    Map* mpMap;
     Tracking* mpTracker;
 
     KeyFrameDatabase* mpKeyFrameDB;

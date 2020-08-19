@@ -270,7 +270,7 @@ vector<KeyFrame*> KeyFrame::GetCovisiblesByWeight(const int &w)
     else
     {
         int n = it-mvOrderedWeights.begin();
-        //cout << "n = " << n << endl;
+
         return vector<KeyFrame*>(mvpOrderedConnectedKeyFrames.begin(), mvpOrderedConnectedKeyFrames.begin()+n);
     }
 }
@@ -425,12 +425,9 @@ void KeyFrame::UpdateConnections(bool upParent)
 
     vector<pair<int,KeyFrame*> > vPairs;
     vPairs.reserve(KFcounter.size());
-    if(!upParent)
-        cout << "UPDATE_CONN: current KF " << mnId << endl;
+
     for(map<KeyFrame*,int>::iterator mit=KFcounter.begin(), mend=KFcounter.end(); mit!=mend; mit++)
     {
-        if(!upParent)
-            cout << "  UPDATE_CONN: KF " << mit->first->mnId << " ; num matches: " << mit->second << endl;
         if(mit->second>nmax)
         {
             nmax=mit->second;
@@ -475,27 +472,7 @@ void KeyFrame::UpdateConnections(bool upParent)
 
         if(mbFirstConnection && mnId!=mpMap->GetInitKFid())
         {
-            /*if(!mpParent || mpParent->GetParent() != this)
-            {
-                KeyFrame* pBestParent = static_cast<KeyFrame*>(NULL);
-                for(KeyFrame* pKFi : mvpOrderedConnectedKeyFrames)
-                {
-                    if(pKFi->GetParent() || pKFi->mnId == mpMap->GetInitKFid())
-                    {
-                        pBestParent = pKFi;
-                        break;
-                    }
-                }
-                if(!pBestParent)
-                {
-                    cout << "It can't be a covisible KF without Parent" << endl << endl;
-                    return;
-                }
-                mpParent = pBestParent;
-                mpParent->AddChild(this);
-                mbFirstConnection = false;
-            }*/
-            // cout << "udt.conn.id: " << mnId << endl;
+
             mpParent = mvpOrderedConnectedKeyFrames.front();
             mpParent->AddChild(this);
             mbFirstConnection = false;
@@ -523,7 +500,6 @@ void KeyFrame::ChangeParent(KeyFrame *pKF)
 //        mpParent->EraseChild(this);
     if(pKF == this)
     {
-        cout << "ERROR: Change parent KF, the parent and child are the same KF" << endl;
         throw std::invalid_argument("The parent and child can not be the same");
     }
 
@@ -605,27 +581,22 @@ void KeyFrame::SetErase()
 
 void KeyFrame::SetBadFlag()
 {   
-    // std::cout << "Erasing KF..." << std::endl;
+
     {
         unique_lock<mutex> lock(mMutexConnections);
         if(mnId==mpMap->GetInitKFid())
         {
-            //std::cout << "KF.BADFLAG-> KF 0!!" << std::endl;
+
             return;
         }
         else if(mbNotErase)
         {
-            //std::cout << "KF.BADFLAG-> mbNotErase!!" << std::endl;
+
             mbToBeErased = true;
             return;
         }
-        if(!mpParent)
-        {
-            //cout << "KF.BADFLAG-> There is not parent, but it is not the first KF in the map" << endl;
-            //cout << "KF.BADFLAG-> KF: " << mnId << "; first KF: " << mpMap->GetInitKFid() << endl;
-        }
     }
-    //std::cout << "KF.BADFLAG-> Erasing KF..." << std::endl;
+
 
     for(map<KeyFrame*,int>::iterator mit = mConnectedKeyFrameWeights.begin(), mend=mConnectedKeyFrameWeights.end(); mit!=mend; mit++)
     {

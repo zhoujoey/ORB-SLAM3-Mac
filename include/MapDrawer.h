@@ -20,7 +20,7 @@
 #ifndef MAPDRAWER_H
 #define MAPDRAWER_H
 
-#include"Atlas.h"
+#include"Map.h"
 #include"MapPoint.h"
 #include"KeyFrame.h"
 #include<pangolin/pangolin.h>
@@ -33,9 +33,9 @@ namespace ORB_SLAM3
 class MapDrawer
 {
 public:
-    MapDrawer(Atlas* pAtlas, const string &strSettingPath);
+    MapDrawer(Map* pMap, const string &strSettingPath);
 
-    Atlas* mpAtlas;
+    Map* mpMap;
 
     void DrawMapPoints();
     void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph);

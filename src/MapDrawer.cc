@@ -27,7 +27,7 @@ namespace ORB_SLAM3
 {
 
 
-MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath):mpAtlas(pAtlas)
+MapDrawer::MapDrawer(Map* pMap, const string &strSettingPath):mpMap(pMap)
 {
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
@@ -42,8 +42,8 @@ MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath):mpAtlas(pAtlas
 
 void MapDrawer::DrawMapPoints()
 {
-    const vector<MapPoint*> &vpMPs = mpAtlas->GetAllMapPoints();
-    const vector<MapPoint*> &vpRefMPs = mpAtlas->GetReferenceMapPoints();
+    const vector<MapPoint*> &vpMPs = mpMap->GetAllMapPoints();
+    const vector<MapPoint*> &vpRefMPs = mpMap->GetReferenceMapPoints();
 
     set<MapPoint*> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
 
@@ -85,7 +85,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
     const float h = w*0.75;
     const float z = w*0.6;
 
-    const vector<KeyFrame*> vpKFs = mpAtlas->GetAllKeyFrames();
+    const vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
 
     if(bDrawKF)
     {
@@ -218,7 +218,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         glEnd();
     }
 
-    if(bDrawInertialGraph && mpAtlas->isImuInitialized())
+    if(bDrawInertialGraph && mpMap->isImuInitialized())
     {
         glLineWidth(mGraphLineWidth);
         glColor4f(1.0f,0.0f,0.0f,0.6f);
@@ -239,69 +239,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         }
 
         glEnd();
-    }
-
-    vector<Map*> vpMaps = mpAtlas->GetAllMaps();
-
-    if(bDrawKF)
-    {
-        for(Map* pMap : vpMaps)
-        {
-            if(pMap == mpAtlas->GetCurrentMap())
-                continue;
-
-            vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
-
-            for(size_t i=0; i<vpKFs.size(); i++)
-            {
-                KeyFrame* pKF = vpKFs[i];
-                cv::Mat Twc = pKF->GetPoseInverse().t();
-                unsigned int index_color = pKF->mnOriginMapId;
-
-                glPushMatrix();
-
-                glMultMatrixf(Twc.ptr<GLfloat>(0));
-
-                if(!vpKFs[i]->GetParent()) // It is the first KF in the map
-                {
-                    glLineWidth(mKeyFrameLineWidth*5);
-                    glColor3f(1.0f,0.0f,0.0f);
-                    glBegin(GL_LINES);
-                }
-                else
-                {
-                    glLineWidth(mKeyFrameLineWidth);
-                    //glColor3f(0.0f,0.0f,1.0f);
-                    glColor3f(mfFrameColors[index_color][0],mfFrameColors[index_color][1],mfFrameColors[index_color][2]);
-                    glBegin(GL_LINES);
-                }
-
-                glVertex3f(0,0,0);
-                glVertex3f(w,h,z);
-                glVertex3f(0,0,0);
-                glVertex3f(w,-h,z);
-                glVertex3f(0,0,0);
-                glVertex3f(-w,-h,z);
-                glVertex3f(0,0,0);
-                glVertex3f(-w,h,z);
-
-                glVertex3f(w,h,z);
-                glVertex3f(w,-h,z);
-
-                glVertex3f(-w,h,z);
-                glVertex3f(-w,-h,z);
-
-                glVertex3f(-w,h,z);
-                glVertex3f(w,h,z);
-
-                glVertex3f(-w,-h,z);
-                glVertex3f(w,-h,z);
-                glEnd();
-
-                glPopMatrix();
-            }
-        }
-    }
+    }    
 }
 
 void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)

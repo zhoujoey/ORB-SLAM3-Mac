@@ -23,7 +23,7 @@
 #include "Map.h"
 #include "MapPoint.h"
 #include "KeyFrame.h"
-#include "LoopClosing.h"
+// #include "LoopClosing.h"
 #include "Frame.h"
 
 #include <math.h>
@@ -41,7 +41,7 @@
 namespace ORB_SLAM3
 {
 
-class LoopClosing;
+// class LoopClosing;
 
 class Optimizer
 {
@@ -65,23 +65,23 @@ public:
     int static PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit = false);
 
     // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise (mono)
-    void static OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,
-                                       const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
-                                       const LoopClosing::KeyFrameAndPose &CorrectedSim3,
-                                       const map<KeyFrame *, set<KeyFrame *> > &LoopConnections,
-                                       const bool &bFixScale);
+    // void static OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,
+    //                                    const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
+    //                                    const LoopClosing::KeyFrameAndPose &CorrectedSim3,
+    //                                    const map<KeyFrame *, set<KeyFrame *> > &LoopConnections,
+    //                                    const bool &bFixScale);
     void static OptimizeEssentialGraph6DoF(KeyFrame* pCurKF, vector<KeyFrame*> &vpFixedKFs, vector<KeyFrame*> &vpFixedCorrectedKFs,
                                            vector<KeyFrame*> &vpNonFixedKFs, vector<MapPoint*> &vpNonCorrectedMPs, double scale);
     void static OptimizeEssentialGraph(KeyFrame* pCurKF, vector<KeyFrame*> &vpFixedKFs, vector<KeyFrame*> &vpFixedCorrectedKFs,
                                        vector<KeyFrame*> &vpNonFixedKFs, vector<MapPoint*> &vpNonCorrectedMPs);
-    void static OptimizeEssentialGraph(KeyFrame* pCurKF,
-                                       const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
-                                       const LoopClosing::KeyFrameAndPose &CorrectedSim3);
+    // void static OptimizeEssentialGraph(KeyFrame* pCurKF,
+    //                                    const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
+    //                                    const LoopClosing::KeyFrameAndPose &CorrectedSim3);
     // For inetial loopclosing
-    void static OptimizeEssentialGraph4DoF(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,
-                                       const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
-                                       const LoopClosing::KeyFrameAndPose &CorrectedSim3,
-                                       const map<KeyFrame *, set<KeyFrame *> > &LoopConnections);
+    // void static OptimizeEssentialGraph4DoF(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,
+    //                                    const LoopClosing::KeyFrameAndPose &NonCorrectedSim3,
+    //                                    const LoopClosing::KeyFrameAndPose &CorrectedSim3,
+    //                                    const map<KeyFrame *, set<KeyFrame *> > &LoopConnections);
 
     // if bFixScale is true, optimize SE3 (stereo,rgbd), Sim3 otherwise (mono) (OLD)
     static int OptimizeSim3(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint *> &vpMatches1,
@@ -98,7 +98,7 @@ public:
 
     void static LocalInertialBA(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, bool bLarge = false, bool bRecInit = false);
 
-    void static MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbStopFlag, Map *pMap, LoopClosing::KeyFrameAndPose &corrPoses);
+    // void static MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbStopFlag, Map *pMap, LoopClosing::KeyFrameAndPose &corrPoses);
 
     // Local BA in welding area when two maps are merged
     void static LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdjustKF, vector<KeyFrame*> vpFixedKF, bool *pbStopFlag);

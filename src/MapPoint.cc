@@ -602,10 +602,10 @@ void MapPoint::PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP)
 void MapPoint::PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid)
 {
     mpRefKF = mpKFid[mBackupRefKFId];
-    if(!mpRefKF)
-    {
-        cout << "MP without KF reference " << mBackupRefKFId << "; Num obs: " << nObs << endl;
-    }
+    // if(!mpRefKF)
+    // {
+    //     cout << "MP without KF reference " << mBackupRefKFId << "; Num obs: " << nObs << endl;
+    // }
     mpReplaced = static_cast<MapPoint*>(NULL);
     if(mBackupReplacedId>=0)
     {

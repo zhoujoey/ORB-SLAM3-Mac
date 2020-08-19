@@ -284,7 +284,7 @@ cv::Mat Frame::GetImuPose()
 bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
 {
     if(Nleft == -1){
-        // cout << "\na";
+
         pMP->mbTrackInView = false;
         pMP->mTrackProjX = -1;
         pMP->mTrackProjY = -1;
@@ -292,7 +292,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
         // 3D in absolute coordinates
         cv::Mat P = pMP->GetWorldPos();
 
-        // cout << "b";
+
 
         // 3D in camera coordinates
         const cv::Mat Pc = mRcw*P+mtcw;
@@ -306,14 +306,14 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
 
         const cv::Point2f uv = mpCamera->project(Pc);
 
-        // cout << "c";
+
 
         if(uv.x<mnMinX || uv.x>mnMaxX)
             return false;
         if(uv.y<mnMinY || uv.y>mnMaxY)
             return false;
 
-        // cout << "d";
+
         pMP->mTrackProjX = uv.x;
         pMP->mTrackProjY = uv.y;
 
@@ -326,12 +326,12 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
         if(dist<minDistance || dist>maxDistance)
             return false;
 
-        // cout << "e";
+
 
         // Check viewing angle
         cv::Mat Pn = pMP->GetNormal();
 
-        // cout << "f";
+
 
         const float viewCos = PO.dot(Pn)/dist;
 
@@ -341,7 +341,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
         // Predict scale in the image
         const int nPredictedLevel = pMP->PredictScale(dist,this);
 
-        // cout << "g";
+
 
         // Data used by the tracking
         pMP->mbTrackInView = true;
@@ -349,13 +349,13 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
         pMP->mTrackProjXR = uv.x - mbf*invz;
 
         pMP->mTrackDepth = Pc_dist;
-        // cout << "h";
+
 
         pMP->mTrackProjY = uv.y;
         pMP->mnTrackScaleLevel= nPredictedLevel;
         pMP->mTrackViewCos = viewCos;
 
-        // cout << "i";
+
 
         return true;
     }
@@ -387,7 +387,7 @@ bool Frame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float 
     // Check positive depth
     if(PcZ<0.0f)
     {
-        // cout << "Negative depth: " << PcZ << endl;
+
         return false;
     }
 
@@ -396,7 +396,7 @@ bool Frame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float 
     u=fx*PcX*invz+cx;
     v=fy*PcY*invz+cy;
 
-    // cout << "c";
+
 
     if(u<mnMinX || u>mnMaxX)
         return false;
@@ -451,8 +451,6 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
     float factorX = r;
     float factorY = r;
 
-    /*cout << "fX " << factorX << endl;
-    cout << "fY " << factorY << endl;*/
 
     const int nMinCellX = max(0,(int)floor((x-mnMinX-factorX)*mfGridElementWidthInv));
     if(nMinCellX>=FRAME_GRID_COLS)

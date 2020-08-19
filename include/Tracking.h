@@ -26,9 +26,9 @@
 
 #include"Viewer.h"
 #include"FrameDrawer.h"
-#include"Atlas.h"
+#include"Map.h"
 #include"LocalMapping.h"
-#include"LoopClosing.h"
+// #include"LoopClosing.h"
 #include"Frame.h"
 #include "ORBVocabulary.h"
 #include"KeyFrameDatabase.h"
@@ -50,14 +50,14 @@ class Viewer;
 class FrameDrawer;
 class Atlas;
 class LocalMapping;
-class LoopClosing;
+// class LoopClosing;
 class System;
 
 class Tracking
 {  
 
 public:
-    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
+    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* mpMap,
              KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string &_nameSeq=std::string());
 
     ~Tracking();
@@ -69,7 +69,7 @@ public:
     void GrabImuData(const IMU::Point &imuMeasurement);
 
     void SetLocalMapper(LocalMapping* pLocalMapper);
-    void SetLoopClosing(LoopClosing* pLoopClosing);
+    // void SetLoopClosing(LoopClosing* pLoopClosing);
     void SetViewer(Viewer* pViewer);
     void SetStepByStep(bool bSet);
 
@@ -86,7 +86,7 @@ public:
         return mpLastKeyFrame;
     }
 
-    void CreateMapInAtlas();
+    //void CreateMapInAtlas();
     std::mutex mMutexTracks;
 
     //--
@@ -166,7 +166,7 @@ protected:
 
     // Map initialization for monocular
     void MonocularInitialization();
-
+    void CreateNewMapPoints();
     cv::Mat ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2);
     void CreateInitialMapMonocular();
 
@@ -224,7 +224,7 @@ protected:
 
     //Other Thread Pointers
     LocalMapping* mpLocalMapper;
-    LoopClosing* mpLoopClosing;
+    // LoopClosing* mpLoopClosing;
 
     //ORB
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
@@ -252,8 +252,8 @@ protected:
     MapDrawer* mpMapDrawer;
     bool bStepByStep;
 
-    //Atlas
-    Atlas* mpAtlas;
+    //Map
+    Map* mpMap;
 
     //Calibration matrix
     cv::Mat mK;

@@ -1526,16 +1526,6 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
 
     }
 
-    /*cout << "count_notMP = " << count_notMP << endl;
-    cout << "count_bad = " << count_bad << endl;
-    cout << "count_isinKF = " << count_isinKF << endl;
-    cout << "count_negdepth = " << count_negdepth << endl;
-    cout << "count_notinim = " << count_notinim << endl;
-    cout << "count_dist = " << count_dist << endl;
-    cout << "count_normal = " << count_normal << endl;
-    cout << "count_notidx = " << count_notidx << endl;
-    cout << "count_thcheck = " << count_thcheck << endl;
-    cout << "tot fused points: " << nFused << endl;*/
     return nFused;
 }
 

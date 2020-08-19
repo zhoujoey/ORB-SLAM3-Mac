@@ -21,8 +21,8 @@
 #define LOCALMAPPING_H
 
 #include "KeyFrame.h"
-#include "Atlas.h"
-#include "LoopClosing.h"
+#include "Map.h"
+// #include "LoopClosing.h"
 #include "Tracking.h"
 #include "KeyFrameDatabase.h"
 #include "Initializer.h"
@@ -35,15 +35,15 @@ namespace ORB_SLAM3
 
 class System;
 class Tracking;
-class LoopClosing;
+// class LoopClosing;
 class Atlas;
 
 class LocalMapping
 {
 public:
-    LocalMapping(System* pSys, Atlas* pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName=std::string());
+    LocalMapping(System* pSys, Map* pMap, const float bMonocular, bool bInertial, const string &_strSeqName=std::string());
 
-    void SetLoopCloser(LoopClosing* pLoopCloser);
+    // void SetLoopCloser(LoopClosing* pLoopCloser);
 
     void SetTracker(Tracking* pTracker);
 
@@ -140,7 +140,7 @@ protected:
     bool mbFinished;
     std::mutex mMutexFinish;
 
-    Atlas* mpAtlas;
+    Map* mpMap;
 
     // LoopClosing* mpLoopCloser;
     Tracking* mpTracker;

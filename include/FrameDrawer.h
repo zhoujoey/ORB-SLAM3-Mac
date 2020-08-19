@@ -22,7 +22,7 @@
 
 #include "Tracking.h"
 #include "MapPoint.h"
-#include "Atlas.h"
+#include "Map.h"
 
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
@@ -40,7 +40,7 @@ class Viewer;
 class FrameDrawer
 {
 public:
-    FrameDrawer(Atlas* pAtlas);
+    FrameDrawer(Map* pMap);
 
     // Update info from the last processed frame.
     void Update(Tracking *pTracker);
@@ -66,8 +66,8 @@ protected:
     vector<int> mvIniMatches;
     int mState;
 
-    Atlas* mpAtlas;
-
+    //Atlas* mpAtlas;
+    Map* mpMap;
     std::mutex mMutex;
     vector<pair<cv::Point2f, cv::Point2f> > mvTracks;
 
