@@ -301,7 +301,7 @@ public:
                 else right++;
             }
         }
-        // cout << "Point distribution in Frame: left-> " << left << " --- right-> " << right << endl;
+
     }
 };
 

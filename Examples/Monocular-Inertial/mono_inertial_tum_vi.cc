@@ -39,19 +39,16 @@ double ttrack_tot = 0;
 int main(int argc, char **argv)
 {
     const int num_seq = (argc-3)/3;
-    // cout << "num_seq = " << num_seq << endl;
     bool bFileName= ((argc % 3) == 1);
 
     string file_name;
     if (bFileName)
         file_name = string(argv[argc-1]);
 
-    // cout << "file name: " << file_name << endl;
 
 
     if(argc < 6)
     {
-        // cerr << endl << "Usage: ./mono_inertial_tum_vi path_to_vocabulary path_to_settings path_to_image_folder_1 path_to_times_file_1 path_to_imu_data_1 (path_to_image_folder_2 path_to_times_file_2 path_to_imu_data_2 ... path_to_image_folder_N path_to_times_file_N path_to_imu_data_N) (trajectory_file_name)" << endl;
         return 1;
     }
 
@@ -77,13 +74,9 @@ int main(int argc, char **argv)
     int tot_images = 0;
     for (seq = 0; seq<num_seq; seq++)
     {
-        // cout << "Loading images for sequence " << seq << "...";
         LoadImages(string(argv[3*(seq+1)]), string(argv[3*(seq+1)+1]), vstrImageFilenames[seq], vTimestampsCam[seq]);
-        cout << "LOADED!" << endl;
 
-        // cout << "Loading IMU for sequence " << seq << "...";
         LoadIMU(string(argv[3*(seq+1)+2]), vTimestampsImu[seq], vAcc[seq], vGyro[seq]);
-        // cout << "LOADED!" << endl;
 
         nImages[seq] = vstrImageFilenames[seq].size();
         tot_images += nImages[seq];
@@ -107,12 +100,9 @@ int main(int argc, char **argv)
     vector<float> vTimesTrack;
     vTimesTrack.resize(tot_images);
 
-    // cout << endl << "-------" << endl;
+
     cout.precision(17);
 
-    /*cout << "Start processing sequence ..." << endl;
-    cout << "Images in the sequence: " << nImages << endl;
-    cout << "IMU data in the sequence: " << nImu << endl << endl;*/
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR, true, 0, file_name);
@@ -135,8 +125,6 @@ int main(int argc, char **argv)
             // clahe
             clahe->apply(im,im);
 
-
-            // cout << "mat type: " << im.type() << endl;
             double tframe = vTimestampsCam[seq][ni];
 
             if(im.empty())
@@ -164,9 +152,7 @@ int main(int argc, char **argv)
                 }
             }
 
-            // cout << "first imu: " << first_imu[seq] << endl;
-            /*cout << "first imu time: " << fixed << vTimestampsImu[first_imu] << endl;
-            cout << "size vImu: " << vImuMeas.size() << endl;*/
+
     #ifdef COMPILEDWITHC11
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     #else
@@ -174,7 +160,7 @@ int main(int argc, char **argv)
     #endif
 
             // Pass the image to the SLAM system
-            // cout << "tframe = " << tframe << endl;
+
             SLAM.TrackMonocular(im,tframe,vImuMeas); // TODO change to monocular_inertial
 
     #ifdef COMPILEDWITHC11
@@ -185,7 +171,7 @@ int main(int argc, char **argv)
 
             double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
             ttrack_tot += ttrack;
-            // std::cout << "ttrack: " << ttrack << std::endl;
+
 
             vTimesTrack[ni]=ttrack;
 

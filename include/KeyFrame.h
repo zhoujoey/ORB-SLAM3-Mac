@@ -612,7 +612,7 @@ public:
                 else right++;
             }
         }
-        // cout << "Point distribution in KeyFrame: left-> " << left << " --- right-> " << right << endl;
+
     }
 
 

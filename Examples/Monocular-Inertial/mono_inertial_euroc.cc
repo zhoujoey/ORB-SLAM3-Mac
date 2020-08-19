@@ -47,13 +47,13 @@ int main(int argc, char *argv[])
     }
 
     const int num_seq = (argc-3)/2;
-    // cout << "num_seq = " << num_seq << endl;
+
     bool bFileName= (((argc-3) % 2) == 1);
     string file_name;
     if (bFileName)
     {
         file_name = string(argv[argc-1]);
-        // cout << "file name: " << file_name << endl;
+
     }
 
     // Load all sequences:
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     int tot_images = 0;
     for (seq = 0; seq<num_seq; seq++)
     {
-        // cout << "Loading images for sequence " << seq << "...";
+
 
         string pathSeq(argv[(2*seq) + 3]);
         string pathTimeStamps(argv[(2*seq) + 4]);
@@ -86,11 +86,9 @@ int main(int argc, char *argv[])
         string pathImu = pathSeq + "/mav0/imu0/data.csv";
 
         LoadImages(pathCam0, pathTimeStamps, vstrImageFilenames[seq], vTimestampsCam[seq]);
-        // cout << "LOADED!" << endl;
 
-        // cout << "Loading IMU for sequence " << seq << "...";
         LoadIMU(pathImu, vTimestampsImu[seq], vAcc[seq], vGyro[seq]);
-        // cout << "LOADED!" << endl;
+
 
         nImages[seq] = vstrImageFilenames[seq].size();
         tot_images += nImages[seq];
@@ -116,9 +114,6 @@ int main(int argc, char *argv[])
 
     cout.precision(17);
 
-    /*cout << "Start processing sequence ..." << endl;
-    cout << "Images in the sequence: " << nImages << endl;
-    cout << "IMU data in the sequence: " << nImu << endl << endl;*/
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR, true);
@@ -153,7 +148,7 @@ int main(int argc, char *argv[])
 
             if(ni>0)
             {
-                // cout << "t_cam " << tframe << endl;
+
 
                 while(vTimestampsImu[seq][first_imu[seq]]<=vTimestampsCam[seq][ni])
                 {
@@ -164,9 +159,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            /*cout << "first imu: " << first_imu << endl;
-            cout << "first imu time: " << fixed << vTimestampsImu[first_imu] << endl;
-            cout << "size vImu: " << vImuMeas.size() << endl;*/
+
     #ifdef COMPILEDWITHC11
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     #else
@@ -174,7 +167,6 @@ int main(int argc, char *argv[])
     #endif
 
             // Pass the image to the SLAM system
-            // cout << "tframe = " << tframe << endl;
             SLAM.TrackMonocular(im,tframe,vImuMeas); // TODO change to monocular_inertial
 
     #ifdef COMPILEDWITHC11
@@ -185,7 +177,7 @@ int main(int argc, char *argv[])
 
             double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
             ttrack_tot += ttrack;
-            // std::cout << "ttrack: " << ttrack << std::endl;
+
 
             vTimesTrack[ni]=ttrack;
 
@@ -201,7 +193,6 @@ int main(int argc, char *argv[])
         }
         if(seq < num_seq - 1)
         {
-            // cout << "Changing the dataset" << endl;
 
             SLAM.ChangeDataset();
         }

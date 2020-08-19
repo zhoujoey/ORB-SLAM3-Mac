@@ -30,7 +30,7 @@
 #include "Tracking.h"
 #include "FrameDrawer.h"
 #include "MapDrawer.h"
-#include "Atlas.h"
+//#include "Atlas.h"
 #include "LocalMapping.h"
 // #include "LoopClosing.h"
 #include "KeyFrameDatabase.h"
