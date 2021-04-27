@@ -1,21 +1,6 @@
-/**
-* This file is part of ORB-SLAM3
-*
-* Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-*
-* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-* License as published by the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
-* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
 
+
+//主进程的实现文件
 
 
 #include "System.h"
@@ -56,19 +41,16 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
        exit(-1);
     }
 
-    bool loadedAtlas = false;
-
-    //----
-    //Load ORB Vocabulary
-    // cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
-
+    //建立一个新的ORB字典
     mpVocabulary = new ORBVocabulary();
+    //获取字典加载状态
 //    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-    bool bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
+	bool bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
+    //如果加载失败，就输出调试信息
     if(!bVocLoad)
     {
-        // cerr << "Wrong path to vocabulary. " << endl;
-        // cerr << "Falied to open at: " << strVocFile << endl;
+        cout<<"cannot load voc"<<endl;
+        //然后退出
         exit(-1);
     }
     // cout << "Vocabulary loaded!" << endl << endl;
@@ -76,38 +58,32 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Create KeyFrame Database
     mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
-    //Create the Atlas
+    //Create the Map
     mpMap = new Map();
-    //----
-
-
-
-
-    if ( mSensor==IMU_MONOCULAR)
-        mpMap->SetInertialSensor();
 
     //Create Drawers. These are used by the Viewer
+    //这里的帧绘制器和地图绘制器将会被可视化的Viewer所使用
     mpFrameDrawer = new FrameDrawer(mpMap);
     mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
 
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     // cout << "Seq. Name: " << strSequence << endl;
-    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor, strSequence);
+    mpTracker = new Tracking(this, 
+	mpVocabulary, 
+	mpFrameDrawer, 
+	mpMapDrawer,
+                             mpMap, 
+							 mpKeyFrameDatabase, 
+							 strSettingsFile, 
+							 mSensor, 
+							 strSequence);
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpMap, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR , strSequence);
-    mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
-    mpLocalMapper->mInitFr = initFr;
-    mpLocalMapper->mThFarPoints = fsSettings["thFarPoints"];
-    if(mpLocalMapper->mThFarPoints!=0)
-    {
-        // cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << endl;
-        mpLocalMapper->mbFarPoints = true;
-    }
-    else
-        mpLocalMapper->mbFarPoints = false;
+    mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,
+	mpLocalMapper);
+
 
     //Initialize the Loop Closing thread and launch
     // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
@@ -117,14 +93,18 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Initialize the Viewer thread and launch
     if(bUseViewer)
     {
-        mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
+        mpViewer = new Viewer(this,
+		 mpFrameDrawer,
+		 mpMapDrawer,
+		 mpTracker,
+		 strSettingsFile);
     // OSX only support running the viewer on main thread.
-    #if not defined(__APPLE__)
+#ifndef __APPLE__
+        //新建viewer线程
         mptViewer = new thread(&Viewer::Run, mpViewer);
-    #endif
+#endif
         mpTracker->SetViewer(mpViewer);
-        // mpLoopCloser->mpViewer = mpViewer;
-        mpViewer->both = mpFrameDrawer->both;
+        //mpViewer->both = mpFrameDrawer->both;
     }
 
     //Set pointers between threads
@@ -144,11 +124,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
 cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
-    if(mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR)
-    {
-        cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << endl;
-        exit(-1);
-    }
 
     // Check mode change
     {
@@ -181,39 +156,11 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const
         {
             mpTracker->Reset();
             mbReset = false;
-            mbResetActiveMap = false;
-        }
-        else if(mbResetActiveMap)
-        {
-            // cout << "SYSTEM-> Reseting active map in monocular case" << endl;
-            mpTracker->ResetActiveMap();
-            mbResetActiveMap = false;
         }
     }
 
-    if (mSensor == System::IMU_MONOCULAR)
-        for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
-            mpTracker->GrabImuData(vImuMeas[i_imu]);
 
     cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp,filename);
-
-    /*if(mpLocalMapper->mbNewInit)
-    {
-        // Save data
-        SaveDebugData(mpLocalMapper->mIdxInit);
-        mpLocalMapper->mbNewInit=false;
-        // Check if reset
-        {
-            unique_lock<mutex> lock(mMutexReset);
-            if(mpLocalMapper->mInitTime>10.0)
-            {
-                mpTracker->Reset();
-                mbReset = false;
-                mbResetActiveMap = false;
-                mpLocalMapper->mInitSect++;
-            }
-        }
-    }*/
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;
@@ -223,11 +170,7 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const
     return Tcw;
 }
 
-void System::StartViewer()
-{
-    if (mpViewer)
-        mpViewer->Run();
-}
+
 
 void System::ActivateLocalizationMode()
 {
@@ -266,17 +209,6 @@ void System::ResetActiveMap()
     mbResetActiveMap = true;
 }
 
-void System::StopViewer()
-{
-    if(mpViewer)
-    {
-        mpViewer->RequestFinish();
-        while(!mpViewer->isFinished())
-            usleep(5000);
-    }
-
-}
-
 void System::Shutdown()
 {
     mpLocalMapper->RequestFinish();
@@ -286,15 +218,6 @@ void System::Shutdown()
     // Wait until all thread have effectively stopped
     while(!mpLocalMapper->isFinished() )
     {
-        // if(!mpLocalMapper->isFinished())
-            // cout << "mpLocalMapper is not finished" << endl;
-        // if(!mpLoopCloser->isFinished())
-        //     cout << "mpLoopCloser is not finished" << endl;
-        // if(mpLoopCloser->isRunningGBA()){
-        //     cout << "mpLoopCloser is running GBA" << endl;
-        //     cout << "break anyway..." << endl;
-        //     break;
-        // }
         usleep(5000);
     }
 
@@ -363,6 +286,20 @@ void System::ChangeDataset()
 
     mpTracker->NewDataset();
 }
+
+#ifdef __APPLE__
+void System::StartViewer()
+{
+    if (mpViewer)
+        mpViewer->Run();
+}
+void System::StopViewer()
+{
+    if (mpViewer)
+        mpViewer->RequestFinish();
+}
+#endif
+
 
 } //namespace ORB_SLAM
 
