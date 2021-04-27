@@ -7,13 +7,9 @@ ENDIF()
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3 -march=native")
 
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-deprecated -O3 -march=native ")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated -O3 -march=native")
 
 # Check C++11 or C++0x support
 include(CheckCXXCompilerFlag)
@@ -41,8 +37,6 @@ if(NOT OpenCV_FOUND)
    endif()
 endif()
 
-MESSAGE("OPENCV VERSION:")
-MESSAGE(${OpenCV_VERSION})
 
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
@@ -90,43 +84,15 @@ target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
-#${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
-#${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
-#macos use dylib
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.dylib
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.dylib
 )
 
-MESSAGE("---------------------")
-MESSAGE(${PROJECT_SOURCE_DIR})
 
 # Build examples
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
+add_executable(main src/main.cpp)
+target_link_libraries(main ${PROJECT_NAME})
 
-#add_executable(mono_tum
-#Examples/Monocular/mono_tum.cc)
-#target_link_libraries(mono_tum ${PROJECT_NAME})
-
-
-add_executable(mono_euroc
-Examples/Monocular/mono_euroc.cc)
-target_link_libraries(mono_euroc ${PROJECT_NAME})
-
-#add_executable(mono_tum_vi
-#Examples/Monocular/mono_tum_vi.cc)
-#target_link_libraries(mono_tum_vi ${PROJECT_NAME})
-
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular-Inertial)
-
-add_executable(mono_inertial_euroc
-Examples/Monocular-Inertial/mono_inertial_euroc.cc)
-target_link_libraries(mono_inertial_euroc ${PROJECT_NAME})
-
-#add_executable(mono_inertial_tum_vi
-#Examples/Monocular-Inertial/mono_inertial_tum_vi.cc)
-#target_link_libraries(mono_inertial_tum_vi ${PROJECT_NAME})
-
-
-
+add_executable(main_vi src/main_vi.cpp)
+target_link_libraries(main_vi ${PROJECT_NAME})

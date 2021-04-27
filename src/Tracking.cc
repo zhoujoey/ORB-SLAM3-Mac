@@ -1,22 +1,3 @@
-/**
-* This file is part of ORB-SLAM3
-*
-* Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-*
-* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-* License as published by the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
-* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
-
-
 #include "Tracking.h"
 
 #include<opencv2/core/core.hpp>
@@ -25,6 +6,7 @@
 #include"ORBmatcher.h"
 #include"FrameDrawer.h"
 #include"Converter.h"
+#include "Map.h"
 #include"Initializer.h"
 #include"G2oTypes.h"
 #include"Optimizer.h"
@@ -126,34 +108,9 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mMinFrames = 0;
     mMaxFrames = fps;
 
-    // cout << endl << "Camera Parameters: " << endl;
-    // cout << "- fx: " << fx << endl;
-    // cout << "- fy: " << fy << endl;
-    // cout << "- cx: " << cx << endl;
-    // cout << "- cy: " << cy << endl;
-    // cout << "- bf: " << mbf << endl;
-    // cout << "- k1: " << DistCoef.at<float>(0) << endl;
-    // cout << "- k2: " << DistCoef.at<float>(1) << endl;
-
-
-    // cout << "- p1: " << DistCoef.at<float>(2) << endl;
-    // cout << "- p2: " << DistCoef.at<float>(3) << endl;
-
-    // if(DistCoef.rows==5)
-    //     cout << "- k3: " << DistCoef.at<float>(4) << endl;
-
-
-
-    // cout << "- fps: " << fps << endl;
-
-
+    // 1:RGB 0:BGR
     int nRGB = fSettings["Camera.RGB"];
     mbRGB = nRGB;
-
-    // if(mbRGB)
-    //     cout << "- color order: RGB (ignored if grayscale)" << endl;
-    // else
-    //     cout << "- color order: BGR (ignored if grayscale)" << endl;
 
     // Load ORB parameters
 
@@ -170,22 +127,10 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 
     initID = 0; lastID = 0;
 
-    // cout << endl << "ORB Extractor Parameters: " << endl;
-    // cout << "- Number of Features: " << nFeatures << endl;
-    // cout << "- Scale Levels: " << nLevels << endl;
-    // cout << "- Scale Factor: " << fScaleFactor << endl;
-    // cout << "- Initial Fast Threshold: " << fIniThFAST << endl;
-    // cout << "- Minimum Fast Threshold: " << fMinThFAST << endl;
-
-
-
     if(sensor==System::IMU_MONOCULAR )
     {
         cv::Mat Tbc;
         fSettings["Tbc"] >> Tbc;
-        // cout << endl;
-
-        // cout << "Left camera to Imu Transform (Tbc): " << endl << Tbc << endl;
 
         float freq, Ng, Na, Ngw, Naw;
         fSettings["IMU.Frequency"] >> freq;
@@ -195,12 +140,6 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
         fSettings["IMU.AccWalk"] >> Naw;
 
         const float sf = sqrt(freq);
-        // cout << endl;
-        // cout << "IMU frequency: " << freq << " Hz" << endl;
-        // cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
-        // cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << endl;
-        // cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
-        // cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << endl;
 
         mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
 
@@ -219,24 +158,11 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 
     mnNumDataset = 0;
 
-    //f_track_stats.open("tracking_stats"+ _nameSeq + ".txt");
-    /*f_track_stats.open("tracking_stats.txt");
-    f_track_stats << "# timestamp, Num KF local, Num MP local, time" << endl;
-    f_track_stats << fixed ;*/
-
-#ifdef SAVE_TIMES
-    f_track_times.open("tracking_times.txt");
-    f_track_times << "# ORB_Ext(ms), matching(ms), Preintegrate_IMU(ms), Pose pred(ms), LocalMap_track(ms), NewKF_dec(ms)" << endl;
-    f_track_times << fixed ;
-#endif
 }
 
 Tracking::~Tracking()
 {
-    //f_track_stats.close();
-#ifdef SAVE_TIMES
-    f_track_times.close();
-#endif
+
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -290,7 +216,6 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
         {
-            // cout << "init extractor" << endl;
             mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
         }
         else
@@ -310,21 +235,6 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
-
-    /*f_track_stats << setprecision(0) << mCurrentFrame.mTimeStamp*1e9 << ",";
-    f_track_stats << mvpLocalKeyFrames.size() << ",";
-    f_track_stats << mvpLocalMapPoints.size() << ",";
-    f_track_stats << setprecision(6) << t_track << endl;*/
-
-#ifdef SAVE_TIMES
-    f_track_times << mCurrentFrame.mTimeORB_Ext << ",";
-    f_track_times << mCurrentFrame.mTimeMatch << ",";
-    f_track_times << mTime_PreIntIMU << ",";
-    f_track_times << mTime_PosePred << ",";
-    f_track_times << mTime_LocalMapTrack << ",";
-    f_track_times << mTime_NewKF_Dec << ",";
-    f_track_times << t_track << endl;
-#endif
 
     return mCurrentFrame.mTcw.clone();
 }
@@ -615,12 +525,6 @@ void Tracking::ResetFrameIMU()
 
 void Tracking::Track()
 {
-#ifdef SAVE_TIMES
-    mTime_PreIntIMU = 0;
-    mTime_PosePred = 0;
-    mTime_LocalMapTrack = 0;
-    mTime_NewKF_Dec = 0;
-#endif
 
     if (bStepByStep)
     {
@@ -628,14 +532,12 @@ void Tracking::Track()
             usleep(500);
         mbStep = false;
     }
-
     if(mpLocalMapper->mbBadImu)
     {
-        // cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
+         cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
         mpSystem->ResetActiveMap();
         return;
     }
-
     if(mState!=NO_IMAGES_YET)
     {
         if(mLastFrame.mTimeStamp>mCurrentFrame.mTimeStamp)
@@ -649,13 +551,13 @@ void Tracking::Track()
         }
         else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
         {
-            // cout << "id last: " << mLastFrame.mnId << "    id curr: " << mCurrentFrame.mnId << endl;
+             cout << "id last: " << mLastFrame.mnId << "    id curr: " << mCurrentFrame.mnId << endl;
             if(mpMap->IsInertial())
             {
 
                 if(mpMap->isImuInitialized())
                 {
-                    // cout << "Timestamp jump detected. State set to LOST. Reseting IMU integration..." << endl;
+                     cout << "Timestamp jump detected. State set to LOST. Reseting IMU integration..." << endl;
                     if(!mpMap->GetIniertialBA2())
                     {
                         //jcc
@@ -669,7 +571,7 @@ void Tracking::Track()
                 }
                 else
                 {
-                    // cout << "Timestamp jump detected, before IMU initialization. Reseting..." << endl;
+                     cout << "Timestamp jump detected, before IMU initialization. Reseting..." << endl;
                     mpSystem->ResetActiveMap();
                 }
             }
@@ -677,7 +579,6 @@ void Tracking::Track()
             return;
         }
     }
-
 
     if ((mSensor == System::IMU_MONOCULAR ) && mpLastKeyFrame)
         mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
@@ -691,17 +592,7 @@ void Tracking::Track()
 
     if ((mSensor == System::IMU_MONOCULAR ) && !mbCreatedMap)
     {
-#ifdef SAVE_TIMES
-        std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
-#endif
         PreintegrateIMU();
-#ifdef SAVE_TIMES
-        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-
-        mTime_PreIntIMU = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
-#endif
-
-
     }
     mbCreatedMap = false;
 
@@ -714,18 +605,19 @@ void Tracking::Track()
     int nMapChangeIndex = mpMap->GetLastMapChange();
     if(nCurMapChangeIndex>nMapChangeIndex)
     {
-        // cout << "Map update detected" << endl;
+         cout << "Map update detected" << endl;
         mpMap->SetLastMapChange(nCurMapChangeIndex);
         mbMapUpdated = true;
     }
 
-    //std::cout << "T2" << std::endl;
+
 
 
     if(mState==NOT_INITIALIZED)
     {
-            MonocularInitialization();
-
+        cout<<"005"<<endl;
+        MonocularInitialization();
+        cout<<"006"<<endl;
         mpFrameDrawer->Update(this);
 
         if(mState!=OK) // If rightly initialized, mState=OK
@@ -740,16 +632,13 @@ void Tracking::Track()
     }
     else
     {
+        cout<<"007"<<endl;
         // System is initialized. Track Frame.
         bool bOK;
 
         // Initial camera pose estimation using motion model or relocalization (if tracking is lost)
         if(!mbOnlyTracking)
         {
-#ifdef SAVE_TIMES
-        std::chrono::steady_clock::time_point timeStartPosePredict = std::chrono::steady_clock::now();
-#endif
-
             // State OK
             // Local Mapping is activated. This is the normal behaviour, unless
             // you explicitly activate the "only tracking" mode.
@@ -834,7 +723,7 @@ void Tracking::Track()
                     if (mpMap->KeyFramesInMap()<10)
                     {
                         mpSystem->ResetActiveMap();
-                        // cout << "Reseting current map..." << endl;
+                         cout << "Reseting current map..." << endl;
                     }else
                          mpSystem->ResetActiveMap();
                         //CreateMapInAtlas();
@@ -847,13 +736,6 @@ void Tracking::Track()
                     return;
                 }
             }
-
-
-#ifdef SAVE_TIMES
-        std::chrono::steady_clock::time_point timeEndPosePredict = std::chrono::steady_clock::now();
-
-        mTime_PosePred = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(timeEndPosePredict - timeStartPosePredict).count();
-#endif
 
         }
         else
@@ -936,17 +818,7 @@ void Tracking::Track()
         {
             if(bOK)
             {
-#ifdef SAVE_TIMES
-                std::chrono::steady_clock::time_point time_StartTrackLocalMap = std::chrono::steady_clock::now();
-#endif
                 bOK = TrackLocalMap();
-#ifdef SAVE_TIMES
-                std::chrono::steady_clock::time_point time_EndTrackLocalMap = std::chrono::steady_clock::now();
-
-                mTime_LocalMapTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndTrackLocalMap - time_StartTrackLocalMap).count();
-#endif
-
-
             }
             // if(!bOK)
             //     cout << "Fail to track local map!" << endl;
@@ -1002,7 +874,7 @@ void Tracking::Track()
             {
                 if(mCurrentFrame.mnId==(mnLastRelocFrameId+mnFramesToResetIMU))
                 {
-                    // cout << "RESETING FRAME!!!" << endl;
+                     cout << "RESETING FRAME!!!" << endl;
                     ResetFrameIMU();
                 }
                 else if(mCurrentFrame.mnId>(mnLastRelocFrameId+30))
@@ -1051,17 +923,7 @@ void Tracking::Track()
             }
             mlpTemporalPoints.clear();
 
-#ifdef SAVE_TIMES
-            std::chrono::steady_clock::time_point timeStartNewKF = std::chrono::steady_clock::now();
-#endif
             bool bNeedKF = NeedNewKeyFrame();
-#ifdef SAVE_TIMES
-            std::chrono::steady_clock::time_point timeEndNewKF = std::chrono::steady_clock::now();
-
-            mTime_NewKF_Dec = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(timeEndNewKF - timeStartNewKF).count();
-#endif
-
-
 
             // Check if we need to insert a new keyframe
             if(bNeedKF && (bOK|| (mState==RECENTLY_LOST && (mSensor == System::IMU_MONOCULAR ))))
@@ -1134,9 +996,10 @@ void Tracking::Track()
 
 void Tracking::MonocularInitialization()
 {
-
+//    cout<<"011"<<endl;
     if(!mpInitializer)
     {
+//        cout<<"012"<<endl;
         // Set Reference Frame
         if(mCurrentFrame.mvKeys.size()>100)
         {
@@ -1168,6 +1031,7 @@ void Tracking::MonocularInitialization()
     }
     else
     {
+//        cout<<"013"<<endl;
         if (((int)mCurrentFrame.mvKeys.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
         {
             delete mpInitializer;
@@ -1217,6 +1081,7 @@ void Tracking::MonocularInitialization()
             // Just for video
             // bStepByStep = true;
         }
+        cout<<"014"<<endl;
     }
 }
 
@@ -1361,50 +1226,6 @@ void Tracking::CreateInitialMapMonocular()
     initID = pKFcur->mnId;
 }
 
-/*
-void Tracking::CreateMapInAtlas()
-{
-    mnLastInitFrameId = mCurrentFrame.mnId;
-    mpAtlas->CreateNewMap();
-    if (mSensor==System::IMU_STEREO || mSensor == System::IMU_MONOCULAR)
-        mpAtlas->SetInertialSensor();
-    mbSetInit=false;
-
-    mnInitialFrameId = mCurrentFrame.mnId+1;
-    mState = NO_IMAGES_YET;
-
-    // Restart the variable with information about the last KF
-    mVelocity = cv::Mat();
-    mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is the current id, because it is the new starting point for new map
-    Verbose::PrintMess("First frame id in map: " + to_string(mnLastInitFrameId+1), Verbose::VERBOSITY_NORMAL);
-    mbVO = false; // Init value for know if there are enough MapPoints in the last KF
-    if(mSensor == System::MONOCULAR || mSensor == System::IMU_MONOCULAR)
-    {
-        if(mpInitializer)
-            delete mpInitializer;
-        mpInitializer = static_cast<Initializer*>(NULL);
-    }
-
-    if((mSensor == System::IMU_MONOCULAR  ) && mpImuPreintegratedFromLastKF)
-    {
-        delete mpImuPreintegratedFromLastKF;
-        mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
-    }
-
-    if(mpLastKeyFrame)
-        mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
-
-    if(mpReferenceKF)
-        mpReferenceKF = static_cast<KeyFrame*>(NULL);
-
-    mLastFrame = Frame();
-    mCurrentFrame = Frame();
-    mvIniMatches.clear();
-
-    mbCreatedMap = true;
-
-}
-*/
 void Tracking::CheckReplacedInLastFrame()
 {
     for(int i =0; i<mLastFrame.N; i++)
