@@ -56,7 +56,7 @@ ${Pangolin_INCLUDE_DIRS}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
-
+# set(CMAKE_MACOSX_RPATH 1)
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
 src/Tracking.cc
@@ -82,26 +82,23 @@ src/CameraModels/Pinhole.cpp
 src/CameraModels/KannalaBrandt8.cpp
 src/OptimizableTypes.cpp
 src/MLPnPsolver.cpp
-src/TwoViewReconstruction.cc)
+src/TwoViewReconstruction.cc
+)
 
-add_subdirectory(Thirdparty/g2o)
-
-if(APPLE)
-set(DBOW2_LIBS ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.dylib)
-set(G2O_LIBS ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.dylib)
-else()
-set(DBOW2_LIBS ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so)
-set(G2O_LIBS ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so)
-endif()
 
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
-${DBOW2_LIBS}
-${G2O_LIBS}
+#${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
+#${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
+#macos use dylib
+${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.dylib
+${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.dylib
 )
 
+MESSAGE("---------------------")
+MESSAGE(${PROJECT_SOURCE_DIR})
 
 # Build examples
 
