@@ -58,10 +58,12 @@ int main(int argc, char *argv[])
 
     //load paths
     string datasetPath(argv[3]);
-    string imagePath = datasetPath + "/mav0/cam0/data";
-    string imageFile = datasetPath + "/mav0/cam0/data.csv";
-    string imuPath = datasetPath + "/mav0/imu0/data.csv";
-
+//    string imagePath = datasetPath + "/cam0/data";
+//    string imageFile = datasetPath + "/cam0/data.csv";
+//    string imuPath = datasetPath + "/imu0/data.csv";
+    string imagePath = datasetPath + "/camera/images";
+    string imageFile = datasetPath + "/camera/datas.csv";
+    string imuPath = datasetPath + "/imu/datas.csv";
     //load images and imus
     LoadImagesCSV(imagePath, imageFile, vstrImageFilenames, vTimestampsCam);
     LoadIMU(imuPath, vTimestampsImu, vAcc, vGyro);

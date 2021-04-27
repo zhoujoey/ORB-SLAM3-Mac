@@ -43,8 +43,10 @@ int main(int argc, char **argv)
     int nImages;
 
     string datasetPath(argv[3]);
-    string imagePath = datasetPath + "/mav0/cam0/data";
-    string imageFile = datasetPath + "/mav0/cam0/data.csv";
+//    string imagePath = datasetPath + "/mav0/cam0/data";
+//    string imageFile = datasetPath + "/mav0/cam0/data.csv";
+    string imagePath = datasetPath + "/camera/images";
+    string imageFile = datasetPath + "/camera/data.csv";
 
 //    LoadImages(imagePath, string(argv[4]), vstrImageFilenames, vTimestampsCam);
     LoadImagesCSV(imagePath, imageFile, vstrImageFilenames, vTimestampsCam);
