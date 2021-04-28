@@ -160,7 +160,7 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const
     }
 
 
-    cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp,filename);
+    cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp);
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;
@@ -272,20 +272,7 @@ bool System::isFinished()
 {
     return (GetTimeFromIMUInit()>0.1);
 }
-// jcc no use
-void System::ChangeDataset()
-{
-    if(mpMap->KeyFramesInMap() < 12)
-    {
-        mpTracker->ResetActiveMap();
-    }
-    else
-    {
-        //mpTracker->CreateMapInAtlas();
-    }
 
-    mpTracker->NewDataset();
-}
 
 #ifdef __APPLE__
 void System::StartViewer()

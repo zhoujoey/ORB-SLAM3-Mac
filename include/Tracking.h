@@ -63,7 +63,7 @@ public:
     ~Tracking();
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
-    cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
+    cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
     // cv::Mat GrabImageImuMonocular(const cv::Mat &im, const double &timestamp);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
@@ -139,7 +139,7 @@ public:
     // True if local mapping is deactivated and we are performing only localization
     bool mbOnlyTracking;
 
-    void Reset(bool bLocMap = false);
+    void Reset();
     void ResetActiveMap(bool bLocMap = false);
 
     float mMeanTrack;
