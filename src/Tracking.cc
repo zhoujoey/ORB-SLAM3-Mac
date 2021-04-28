@@ -35,7 +35,6 @@
 #include<mutex>
 #include<chrono>
 #include <include/CameraModels/Pinhole.h>
-#include <include/MLPnPsolver.h>
 
 
 using namespace std;
@@ -2156,9 +2155,9 @@ bool Tracking::Relocalization()
     // We perform first an ORB matching with each candidate
     // If enough matches are found we setup a PnP solver
     ORBmatcher matcher(0.75,true);
-
-    vector<MLPnPsolver*> vpMLPnPsolvers;
-    vpMLPnPsolvers.resize(nKFs);
+    //每个关键帧的解算器
+    vector<PnPsolver*> vpPnPsolvers;
+    vpPnPsolvers.resize(nKFs);
 
     vector<vector<MapPoint*> > vvpMapPointMatches;
     vvpMapPointMatches.resize(nKFs);
@@ -2183,9 +2182,18 @@ bool Tracking::Relocalization()
             }
             else
             {
-                MLPnPsolver* pSolver = new MLPnPsolver(mCurrentFrame,vvpMapPointMatches[i]);
-                pSolver->SetRansacParameters(0.99,10,300,6,0.5,5.991);  //This solver needs at least 6 points
-                vpMLPnPsolvers[i] = pSolver;
+                // 如果匹配数目够用，用匹配结果初始化EPnPsolver
+                // 为什么用EPnP? 因为计算复杂度低，精度高
+                PnPsolver* pSolver = new PnPsolver(mCurrentFrame,vvpMapPointMatches[i]);
+                pSolver->SetRansacParameters(
+                    0.99,   //用于计算RANSAC迭代次数理论值的概率
+                    10,     //最小内点数, 但是要注意在程序中实际上是min(给定最小内点数,最小集,内点数理论值),不一定使用这个
+                    300,    //最大迭代次数
+                    4,      //最小集(求解这个问题在一次采样中所需要采样的最少的点的个数,对于Sim3是3,EPnP是4),参与到最小内点数的确定过程中
+                    0.5,    //这个是表示(最小内点数/样本总数);实际上的RANSAC正常退出的时候所需要的最小内点数其实是根据这个量来计算得到的
+                    5.991); // 自由度为2的卡方检验的阈值,程序中还会根据特征点所在的图层对这个阈值进行缩放
+                vpPnPsolvers[i] = pSolver;
+                nCandidates++;
             }
         }
     }
@@ -2207,7 +2215,8 @@ bool Tracking::Relocalization()
             int nInliers;
             bool bNoMore;
 
-            MLPnPsolver* pSolver = vpMLPnPsolvers[i];
+            // Step 4.1：通过EPnP算法估计姿态，迭代5次
+            PnPsolver* pSolver = vpPnPsolvers[i];
             cv::Mat Tcw = pSolver->iterate(5,bNoMore,vbInliers,nInliers);
 
             // If Ransac reachs max. iterations discard keyframe

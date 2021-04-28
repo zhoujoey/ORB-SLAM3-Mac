@@ -76,7 +76,6 @@ src/ImuTypes.cc
 src/G2oTypes.cc
 src/CameraModels/Pinhole.cpp
 src/OptimizableTypes.cpp
-src/MLPnPsolver.cpp
 
 src/TwoViewReconstruction.cc
 )
