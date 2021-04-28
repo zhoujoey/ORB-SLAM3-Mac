@@ -21,7 +21,6 @@
 
 #include "GeometricCamera.h"
 #include "Pinhole.h"
-#include "KannalaBrandt8.h"
 
 namespace ORB_SLAM3
 {
@@ -291,10 +290,6 @@ void Atlas::PreSave()
         {
             mvpBackupCamPin.push_back((Pinhole*) pCam);
         }
-        else if(pCam->GetType() == pCam->CAM_FISHEYE)
-        {
-            mvpBackupCamKan.push_back((KannalaBrandt8*) pCam);
-        }
     }
 
 }
@@ -304,12 +299,6 @@ void Atlas::PostLoad()
     mvpCameras.clear();
     map<unsigned int,GeometricCamera*> mpCams;
     for(Pinhole* pCam : mvpBackupCamPin)
-    {
-        //mvpCameras.push_back((GeometricCamera*)pCam);
-        mvpCameras.push_back(pCam);
-        mpCams[pCam->GetId()] = pCam;
-    }
-    for(KannalaBrandt8* pCam : mvpBackupCamKan)
     {
         //mvpCameras.push_back((GeometricCamera*)pCam);
         mvpCameras.push_back(pCam);

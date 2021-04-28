@@ -89,7 +89,6 @@ namespace ORB_SLAM3 {
         unsigned int GetType() { return mnType; }
 
         const unsigned int CAM_PINHOLE = 0;
-        const unsigned int CAM_FISHEYE = 1;
 
         static long unsigned int nNextId;
 

@@ -35,7 +35,6 @@
 #include<mutex>
 #include<chrono>
 #include <include/CameraModels/Pinhole.h>
-#include <include/CameraModels/KannalaBrandt8.h>
 #include <include/MLPnPsolver.h>
 
 
@@ -75,65 +74,6 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
         DistCoef.at<float>(2) = fSettings["Camera.p1"];
         DistCoef.at<float>(3) = fSettings["Camera.p2"];
     }
-    if(sCameraName == "KannalaBrandt8"){
-        float fx = fSettings["Camera.fx"];
-        float fy = fSettings["Camera.fy"];
-        float cx = fSettings["Camera.cx"];
-        float cy = fSettings["Camera.cy"];
-
-        float K1 = fSettings["Camera.k1"];
-        float K2 = fSettings["Camera.k2"];
-        float K3 = fSettings["Camera.k3"];
-        float K4 = fSettings["Camera.k4"];
-
-        vector<float> vCamCalib{fx,fy,cx,cy,K1,K2,K3,K4};
-
-        mpCamera = new KannalaBrandt8(vCamCalib);
-
-        mpAtlas->AddCamera(mpCamera);
-
-        if(sensor==System::STEREO || sensor==System::IMU_STEREO){
-            //Right camera
-            fx = fSettings["Camera2.fx"];
-            fy = fSettings["Camera2.fy"];
-            cx = fSettings["Camera2.cx"];
-            cy = fSettings["Camera2.cy"];
-
-            K1 = fSettings["Camera2.k1"];
-            K2 = fSettings["Camera2.k2"];
-            K3 = fSettings["Camera2.k3"];
-            K4 = fSettings["Camera2.k4"];
-
-            cout << endl << "Camera2 Parameters: " << endl;
-            cout << "- fx: " << fx << endl;
-            cout << "- fy: " << fy << endl;
-            cout << "- cx: " << cx << endl;
-            cout << "- cy: " << cy << endl;
-
-            vector<float> vCamCalib2{fx,fy,cx,cy,K1,K2,K3,K4};
-
-            mpCamera2 = new KannalaBrandt8(vCamCalib2);
-
-            mpAtlas->AddCamera(mpCamera2);
-
-            int leftLappingBegin = fSettings["Camera.lappingBegin"];
-            int leftLappingEnd = fSettings["Camera.lappingEnd"];
-
-            int rightLappingBegin = fSettings["Camera2.lappingBegin"];
-            int rightLappingEnd = fSettings["Camera2.lappingEnd"];
-
-            static_cast<KannalaBrandt8*>(mpCamera)->mvLappingArea[0] = leftLappingBegin;
-            static_cast<KannalaBrandt8*>(mpCamera)->mvLappingArea[1] = leftLappingEnd;
-
-            static_cast<KannalaBrandt8*>(mpCamera2)->mvLappingArea[0] = rightLappingBegin;
-            static_cast<KannalaBrandt8*>(mpCamera2)->mvLappingArea[1] = rightLappingEnd;
-
-            fSettings["Tlr"] >> mTlr;
-            cout << "- mTlr: \n" << mTlr << endl;
-            mpFrameDrawer->both = true;
-        }
-    }
-
     float fx = fSettings["Camera.fx"];
     float fy = fSettings["Camera.fy"];
     float cx = fSettings["Camera.cx"];

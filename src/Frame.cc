@@ -28,7 +28,6 @@
 
 #include <thread>
 #include <include/CameraModels/Pinhole.h>
-#include <include/CameraModels/KannalaBrandt8.h>
 
 namespace ORB_SLAM3
 {
@@ -1107,7 +1106,7 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
 
     cv::hconcat(Rrl,trl,mTrl);
 
-    ComputeStereoFishEyeMatches();
+
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
 
     //Put all descriptors in the same matrix
@@ -1130,54 +1129,8 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     double t_assign = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t4 - t3).count();
     double t_undistort = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t5 - t4).count();
 
-    /*cout << "Reading time: " << t_read << endl;
-    cout << "Extraction time: " << t_orbextract << endl;
-    cout << "Matching time: " << t_stereomatches << endl;
-    cout << "Assignment time: " << t_assign << endl;
-    cout << "Undistortion time: " << t_undistort << endl;*/
 
-}
 
-void Frame::ComputeStereoFishEyeMatches() {
-    //Speed it up by matching keypoints in the lapping area
-    vector<cv::KeyPoint> stereoLeft(mvKeys.begin() + monoLeft, mvKeys.end());
-    vector<cv::KeyPoint> stereoRight(mvKeysRight.begin() + monoRight, mvKeysRight.end());
-
-    cv::Mat stereoDescLeft = mDescriptors.rowRange(monoLeft, mDescriptors.rows);
-    cv::Mat stereoDescRight = mDescriptorsRight.rowRange(monoRight, mDescriptorsRight.rows);
-
-    mvLeftToRightMatch = vector<int>(Nleft,-1);
-    mvRightToLeftMatch = vector<int>(Nright,-1);
-    mvDepth = vector<float>(Nleft,-1.0f);
-    mvuRight = vector<float>(Nleft,-1);
-    mvStereo3Dpoints = vector<cv::Mat>(Nleft);
-    mnCloseMPs = 0;
-
-    //Perform a brute force between Keypoint in the left and right image
-    vector<vector<cv::DMatch>> matches;
-
-    BFmatcher.knnMatch(stereoDescLeft,stereoDescRight,matches,2);
-
-    int nMatches = 0;
-    int descMatches = 0;
-
-    //Check matches using Lowe's ratio
-    for(vector<vector<cv::DMatch>>::iterator it = matches.begin(); it != matches.end(); ++it){
-        if((*it).size() >= 2 && (*it)[0].distance < (*it)[1].distance * 0.7){
-            //For every good match, check parallax and reprojection error to discard spurious matches
-            cv::Mat p3D;
-            descMatches++;
-            float sigma1 = mvLevelSigma2[mvKeys[(*it)[0].queryIdx + monoLeft].octave], sigma2 = mvLevelSigma2[mvKeysRight[(*it)[0].trainIdx + monoRight].octave];
-            float depth = static_cast<KannalaBrandt8*>(mpCamera)->TriangulateMatches(mpCamera2,mvKeys[(*it)[0].queryIdx + monoLeft],mvKeysRight[(*it)[0].trainIdx + monoRight],mRlr,mtlr,sigma1,sigma2,p3D);
-            if(depth > 0.0001f){
-                mvLeftToRightMatch[(*it)[0].queryIdx + monoLeft] = (*it)[0].trainIdx + monoRight;
-                mvRightToLeftMatch[(*it)[0].trainIdx + monoRight] = (*it)[0].queryIdx + monoLeft;
-                mvStereo3Dpoints[(*it)[0].queryIdx + monoLeft] = p3D.clone();
-                mvDepth[(*it)[0].queryIdx + monoLeft] = depth;
-                nMatches++;
-            }
-        }
-    }
 }
 
 bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight) {

@@ -286,7 +286,6 @@ public:
     static cv::BFMatcher BFmatcher;
 
     //Triangulated stereo observations using as reference the left camera. These are
-    //computed during ComputeStereoFishEyeMatches
     std::vector<cv::Mat> mvStereo3Dpoints;
 
     //Grid for the right image
@@ -295,9 +294,6 @@ public:
     cv::Mat mTlr, mRlr, mtlr, mTrl;
 
     Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, GeometricCamera* pCamera2, cv::Mat& Tlr,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
-
-    //Stereo fisheye
-    void ComputeStereoFishEyeMatches();
 
     bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
 

@@ -256,25 +256,6 @@ class KeyFrame
         ar & mnBackupIdCamera;
         ar & mnBackupIdCamera2;
 
-        // Fisheye variables
-        /*ar & mvLeftToRightMatch;
-        ar & mvRightToLeftMatch;
-        ar & NLeft;
-        ar & NRight;
-        serializeMatrix(ar, mTlr, version);
-        //serializeMatrix(ar, mTrl, version);
-        serializeVectorKeyPoints(ar, mvKeysRight, version);
-        ar & mGridRight;
-
-        // Inertial variables
-        ar & mImuBias;
-        ar & mBackupImuPreintegrated;
-        ar & mImuCalib;
-        ar & mBackupPrevKFId;
-        ar & mBackupNextKFId;
-        ar & bImu;
-        serializeMatrix(ar, Vw, version);
-        serializeMatrix(ar, Owb, version);*/
 
     }
 
