@@ -245,8 +245,6 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
 
     UndistortKeyPoints();
 
-    ComputeStereoFromRGBD(imDepth);
-
     mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
 
     mmProjectPoints.clear();// = map<long unsigned int, cv::Point2f>(N, static_cast<cv::Point2f>(NULL));
@@ -987,30 +985,6 @@ void Frame::ComputeStereoMatches()
         {
             mvuRight[vDistIdx[i].second]=-1;
             mvDepth[vDistIdx[i].second]=-1;
-        }
-    }
-}
-
-
-void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
-{
-    mvuRight = vector<float>(N,-1);
-    mvDepth = vector<float>(N,-1);
-
-    for(int i=0; i<N; i++)
-    {
-        const cv::KeyPoint &kp = mvKeys[i];
-        const cv::KeyPoint &kpU = mvKeysUn[i];
-
-        const float &v = kp.pt.y;
-        const float &u = kp.pt.x;
-
-        const float d = imDepth.at<float>(v,u);
-
-        if(d>0)
-        {
-            mvDepth[i] = d;
-            mvuRight[i] = kpU.pt.x-mbf/d;
         }
     }
 }
