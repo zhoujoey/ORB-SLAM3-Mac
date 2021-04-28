@@ -1671,7 +1671,8 @@ void Tracking::CreateInitialMapMonocular()
     double aux = (mCurrentFrame.mTimeStamp-mLastFrame.mTimeStamp)/(mCurrentFrame.mTimeStamp-mInitialFrame.mTimeStamp);
     phi *= aux;
 
-    mLastFrame = Frame(mCurrentFrame);
+    //mLastFrame = Frame(mCurrentFrame);
+    mLastFrame = mCurrentFrame;
 
     mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
 
