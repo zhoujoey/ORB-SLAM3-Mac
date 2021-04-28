@@ -20,8 +20,6 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-//#define SAVE_TIMES
-
 #include <unistd.h>
 #include<stdio.h>
 #include<stdlib.h>

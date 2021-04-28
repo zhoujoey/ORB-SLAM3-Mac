@@ -49,22 +49,63 @@ Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuP
 
 //Copy Constructor
 Frame::Frame(const Frame &frame)
-    :mpcpi(frame.mpcpi),mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
-     mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()), mDistCoef(frame.mDistCoef.clone()),
-     mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
-     mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn), mvuRight(frame.mvuRight),
-     mvDepth(frame.mvDepth), mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec),
-     mDescriptors(frame.mDescriptors.clone()), mDescriptorsRight(frame.mDescriptorsRight.clone()),
-     mvpMapPoints(frame.mvpMapPoints), mvbOutlier(frame.mvbOutlier), mImuCalib(frame.mImuCalib), mnCloseMPs(frame.mnCloseMPs),
-     mpImuPreintegrated(frame.mpImuPreintegrated), mpImuPreintegratedFrame(frame.mpImuPreintegratedFrame), mImuBias(frame.mImuBias),
-     mnId(frame.mnId), mpReferenceKF(frame.mpReferenceKF), mnScaleLevels(frame.mnScaleLevels),
-     mfScaleFactor(frame.mfScaleFactor), mfLogScaleFactor(frame.mfLogScaleFactor),
-     mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors), mNameFile(frame.mNameFile), mnDataset(frame.mnDataset),
-     mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2), mpPrevFrame(frame.mpPrevFrame), mpLastKeyFrame(frame.mpLastKeyFrame), mbImuPreintegrated(frame.mbImuPreintegrated), mpMutexImu(frame.mpMutexImu),
-     mpCamera(frame.mpCamera), mpCamera2(frame.mpCamera2), Nleft(frame.Nleft), Nright(frame.Nright),
-     monoLeft(frame.monoLeft), monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
-     mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
-     mTlr(frame.mTlr.clone()), mRlr(frame.mRlr.clone()), mtlr(frame.mtlr.clone()), mTrl(frame.mTrl.clone()), mTimeStereoMatch(frame.mTimeStereoMatch), mTimeORB_Ext(frame.mTimeORB_Ext)
+    :mpcpi(frame.mpcpi),
+	mpORBvocabulary(frame.mpORBvocabulary), 
+	mpORBextractorLeft(frame.mpORBextractorLeft), 
+	mpORBextractorRight(frame.mpORBextractorRight),
+     mTimeStamp(frame.mTimeStamp), 
+	 mK(frame.mK.clone()), 
+	 mDistCoef(frame.mDistCoef.clone()),
+     mbf(frame.mbf), 
+	 mb(frame.mb), 
+	 mThDepth(frame.mThDepth), 
+	 N(frame.N), 
+	 mvKeys(frame.mvKeys),
+     mvKeysRight(frame.mvKeysRight), 
+	 mvKeysUn(frame.mvKeysUn), 
+	 mvuRight(frame.mvuRight),
+     mvDepth(frame.mvDepth), 
+	 mBowVec(frame.mBowVec), 
+	 mFeatVec(frame.mFeatVec),
+     mDescriptors(frame.mDescriptors.clone()), 
+	 mDescriptorsRight(frame.mDescriptorsRight.clone()),
+     mvpMapPoints(frame.mvpMapPoints), 
+	 mvbOutlier(frame.mvbOutlier), 
+	 mImuCalib(frame.mImuCalib), 
+	 mnCloseMPs(frame.mnCloseMPs),
+     mpImuPreintegrated(frame.mpImuPreintegrated), 
+	 mpImuPreintegratedFrame(frame.mpImuPreintegratedFrame), 
+	 mImuBias(frame.mImuBias),
+     mnId(frame.mnId), 
+	 mpReferenceKF(frame.mpReferenceKF), 
+	 mnScaleLevels(frame.mnScaleLevels),
+     mfScaleFactor(frame.mfScaleFactor), 
+	 mfLogScaleFactor(frame.mfLogScaleFactor),
+     mvScaleFactors(frame.mvScaleFactors), 
+	 mvInvScaleFactors(frame.mvInvScaleFactors), 
+	 mNameFile(frame.mNameFile), 
+	 mnDataset(frame.mnDataset),
+     mvLevelSigma2(frame.mvLevelSigma2), 
+	 mvInvLevelSigma2(frame.mvInvLevelSigma2), 
+	 mpPrevFrame(frame.mpPrevFrame), 
+	 mpLastKeyFrame(frame.mpLastKeyFrame), 
+	 mbImuPreintegrated(frame.mbImuPreintegrated), 
+	 mpMutexImu(frame.mpMutexImu),
+     mpCamera(frame.mpCamera), 
+	 mpCamera2(frame.mpCamera2), 
+	 Nleft(frame.Nleft), 
+	 Nright(frame.Nright),
+     monoLeft(frame.monoLeft), 
+	 monoRight(frame.monoRight), 
+	 mvLeftToRightMatch(frame.mvLeftToRightMatch),
+     mvRightToLeftMatch(frame.mvRightToLeftMatch), 
+	 mvStereo3Dpoints(frame.mvStereo3Dpoints),
+     mTlr(frame.mTlr.clone()), 
+	 mRlr(frame.mRlr.clone()), 
+	 mtlr(frame.mtlr.clone()), 
+	 mTrl(frame.mTrl.clone()), 
+	 mTimeStereoMatch(frame.mTimeStereoMatch), 
+	 mTimeORB_Ext(frame.mTimeORB_Ext)
 {
     for(int i=0;i<FRAME_GRID_COLS;i++)
         for(int j=0; j<FRAME_GRID_ROWS; j++){
@@ -103,18 +144,11 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
     // ORB extraction
-#ifdef SAVE_TIMES
-    std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
-#endif
+
     thread threadLeft(&Frame::ExtractORB,this,0,imLeft,0,0);
     thread threadRight(&Frame::ExtractORB,this,1,imRight,0,0);
     threadLeft.join();
     threadRight.join();
-#ifdef SAVE_TIMES
-    std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
-
-    mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
-#endif
 
 
     N = mvKeys.size();
@@ -124,15 +158,8 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
 
     UndistortKeyPoints();
 
-#ifdef SAVE_TIMES
-    std::chrono::steady_clock::time_point time_StartStereoMatches = std::chrono::steady_clock::now();
-#endif
-    ComputeStereoMatches();
-#ifdef SAVE_TIMES
-    std::chrono::steady_clock::time_point time_EndStereoMatches = std::chrono::steady_clock::now();
 
-    mTimeStereoMatch = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndStereoMatches - time_StartStereoMatches).count();
-#endif
+    ComputeStereoMatches();
 
 
     mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
@@ -208,15 +235,8 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
     // ORB extraction
-#ifdef SAVE_TIMES
-    std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
-#endif
-    ExtractORB(0,imGray,0,0);
-#ifdef SAVE_TIMES
-    std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
 
-    mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
-#endif
+    ExtractORB(0,imGray,0,0);
 
 
     N = mvKeys.size();
@@ -296,15 +316,8 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
     // ORB extraction
-#ifdef SAVE_TIMES
-    std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
-#endif
-    ExtractORB(0,imGray,0,1000);
-#ifdef SAVE_TIMES
-    std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
 
-    mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
-#endif
+    ExtractORB(0,imGray,0,1000);
 
 
     N = mvKeys.size();

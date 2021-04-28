@@ -303,24 +303,11 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 
     mnNumDataset = 0;
 
-    //f_track_stats.open("tracking_stats"+ _nameSeq + ".txt");
-    /*f_track_stats.open("tracking_stats.txt");
-    f_track_stats << "# timestamp, Num KF local, Num MP local, time" << endl;
-    f_track_stats << fixed ;*/
-
-#ifdef SAVE_TIMES
-    f_track_times.open("tracking_times.txt");
-    f_track_times << "# ORB_Ext(ms), Stereo matching(ms), Preintegrate_IMU(ms), Pose pred(ms), LocalMap_track(ms), NewKF_dec(ms)" << endl;
-    f_track_times << fixed ;
-#endif
 }
 
 Tracking::~Tracking()
 {
-    //f_track_stats.close();
-#ifdef SAVE_TIMES
-    f_track_times.close();
-#endif
+
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -397,22 +384,6 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 
     double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
 
-    /*cout << "trracking time: " << t_track << endl;
-    f_track_stats << setprecision(0) << mCurrentFrame.mTimeStamp*1e9 << ",";
-    f_track_stats << mvpLocalKeyFrames.size() << ",";
-    f_track_stats << mvpLocalMapPoints.size() << ",";
-    f_track_stats << setprecision(6) << t_track << endl;*/
-
-#ifdef SAVE_TIMES
-    f_track_times << mCurrentFrame.mTimeORB_Ext << ",";
-    f_track_times << mCurrentFrame.mTimeStereoMatch << ",";
-    f_track_times << mTime_PreIntIMU << ",";
-    f_track_times << mTime_PosePred << ",";
-    f_track_times << mTime_LocalMapTrack << ",";
-    f_track_times << mTime_NewKF_Dec << ",";
-    f_track_times << t_track << endl;
-#endif
-
     return mCurrentFrame.mTcw.clone();
 }
 
@@ -452,21 +423,6 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
-
-    /*f_track_stats << setprecision(0) << mCurrentFrame.mTimeStamp*1e9 << ",";
-    f_track_stats << mvpLocalKeyFrames.size() << ",";
-    f_track_stats << mvpLocalMapPoints.size() << ",";
-    f_track_stats << setprecision(6) << t_track << endl;*/
-
-#ifdef SAVE_TIMES
-    f_track_times << mCurrentFrame.mTimeORB_Ext << ",";
-    f_track_times << mCurrentFrame.mTimeStereoMatch << ",";
-    f_track_times << mTime_PreIntIMU << ",";
-    f_track_times << mTime_PosePred << ",";
-    f_track_times << mTime_LocalMapTrack << ",";
-    f_track_times << mTime_NewKF_Dec << ",";
-    f_track_times << t_track << endl;
-#endif
 
     return mCurrentFrame.mTcw.clone();
 }
@@ -523,21 +479,6 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
-
-    /*f_track_stats << setprecision(0) << mCurrentFrame.mTimeStamp*1e9 << ",";
-    f_track_stats << mvpLocalKeyFrames.size() << ",";
-    f_track_stats << mvpLocalMapPoints.size() << ",";
-    f_track_stats << setprecision(6) << t_track << endl;*/
-
-#ifdef SAVE_TIMES
-    f_track_times << mCurrentFrame.mTimeORB_Ext << ",";
-    f_track_times << mCurrentFrame.mTimeStereoMatch << ",";
-    f_track_times << mTime_PreIntIMU << ",";
-    f_track_times << mTime_PosePred << ",";
-    f_track_times << mTime_LocalMapTrack << ",";
-    f_track_times << mTime_NewKF_Dec << ",";
-    f_track_times << t_track << endl;
-#endif
 
     return mCurrentFrame.mTcw.clone();
 }
@@ -828,12 +769,6 @@ void Tracking::ResetFrameIMU()
 
 void Tracking::Track()
 {
-#ifdef SAVE_TIMES
-    mTime_PreIntIMU = 0;
-    mTime_PosePred = 0;
-    mTime_LocalMapTrack = 0;
-    mTime_NewKF_Dec = 0;
-#endif
 
     if (bStepByStep)
     {
@@ -903,17 +838,7 @@ void Tracking::Track()
 
     if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO) && !mbCreatedMap)
     {
-#ifdef SAVE_TIMES
-        std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
-#endif
         PreintegrateIMU();
-#ifdef SAVE_TIMES
-        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-
-        mTime_PreIntIMU = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
-#endif
-
-
     }
     mbCreatedMap = false;
 
@@ -964,10 +889,6 @@ void Tracking::Track()
         // Initial camera pose estimation using motion model or relocalization (if tracking is lost)
         if(!mbOnlyTracking)
         {
-#ifdef SAVE_TIMES
-        std::chrono::steady_clock::time_point timeStartPosePredict = std::chrono::steady_clock::now();
-#endif
-
             // State OK
             // Local Mapping is activated. This is the normal behaviour, unless
             // you explicitly activate the "only tracking" mode.
@@ -1066,13 +987,6 @@ void Tracking::Track()
                 }
             }
 
-
-#ifdef SAVE_TIMES
-        std::chrono::steady_clock::time_point timeEndPosePredict = std::chrono::steady_clock::now();
-
-        mTime_PosePred = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(timeEndPosePredict - timeStartPosePredict).count();
-#endif
-
         }
         else
         {
@@ -1154,17 +1068,7 @@ void Tracking::Track()
         {
             if(bOK)
             {
-#ifdef SAVE_TIMES
-                std::chrono::steady_clock::time_point time_StartTrackLocalMap = std::chrono::steady_clock::now();
-#endif
                 bOK = TrackLocalMap();
-#ifdef SAVE_TIMES
-                std::chrono::steady_clock::time_point time_EndTrackLocalMap = std::chrono::steady_clock::now();
-
-                mTime_LocalMapTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndTrackLocalMap - time_StartTrackLocalMap).count();
-#endif
-
-
             }
             if(!bOK)
                 cout << "Fail to track local map!" << endl;
@@ -1269,17 +1173,7 @@ void Tracking::Track()
             }
             mlpTemporalPoints.clear();
 
-#ifdef SAVE_TIMES
-            std::chrono::steady_clock::time_point timeStartNewKF = std::chrono::steady_clock::now();
-#endif
             bool bNeedKF = NeedNewKeyFrame();
-#ifdef SAVE_TIMES
-            std::chrono::steady_clock::time_point timeEndNewKF = std::chrono::steady_clock::now();
-
-            mTime_NewKF_Dec = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(timeEndNewKF - timeStartNewKF).count();
-#endif
-
-
 
             // Check if we need to insert a new keyframe
             if(bNeedKF && (bOK|| (mState==RECENTLY_LOST && (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO))))
