@@ -55,7 +55,6 @@ class Atlas
         // Save/load the set of maps, the set is broken in libboost 1.58 for ubuntu 16.04
         //ar & mspMaps;
         ar & mvpBackupMaps;
-        ar & mvpCameras;
         //ar & mvpBackupCamPin;
         //ar & mvpBackupCamKan;
         // Need to save/load the static Id from Frame, KeyFrame, MapPoint and Map
@@ -82,10 +81,6 @@ public:
     // Method for change components in the current map
     void AddKeyFrame(KeyFrame* pKF);
     void AddMapPoint(MapPoint* pMP);
-    //void EraseMapPoint(MapPoint* pMP);
-    //void EraseKeyFrame(KeyFrame* pKF);
-
-    void AddCamera(GeometricCamera* pCam);
 
     /* All methods without Map pointer work on current map */
     void SetReferenceMapPoints(const std::vector<MapPoint*> &vpMPs);
@@ -136,7 +131,6 @@ protected:
     std::vector<Map*> mvpBackupMaps;
     Map* mpCurrentMap;
 
-    std::vector<GeometricCamera*> mvpCameras;
     std::vector<Pinhole*> mvpBackupCamPin;
 
     //Pinhole testCam;

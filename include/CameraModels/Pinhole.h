@@ -30,8 +30,6 @@
 
 #include "GeometricCamera.h"
 
-#include "TwoViewReconstruction.h"
-
 namespace ORB_SLAM3 {
     class Pinhole : public GeometricCamera {
 
@@ -49,13 +47,13 @@ namespace ORB_SLAM3 {
             mnId=nNextId++;
             mnType = CAM_PINHOLE;
         }
-        Pinhole(const std::vector<float> _vParameters) : GeometricCamera(_vParameters), tvr(nullptr) {
+        Pinhole(const std::vector<float> _vParameters) : GeometricCamera(_vParameters) {
             assert(mvParameters.size() == 4);
             mnId=nNextId++;
             mnType = CAM_PINHOLE;
         }
 
-        Pinhole(Pinhole* pPinhole) : GeometricCamera(pPinhole->mvParameters), tvr(nullptr) {
+        Pinhole(Pinhole* pPinhole) : GeometricCamera(pPinhole->mvParameters)  {
             assert(mvParameters.size() == 4);
             mnId=nNextId++;
             mnType = CAM_PINHOLE;
@@ -63,7 +61,6 @@ namespace ORB_SLAM3 {
 
 
         ~Pinhole(){
-            if(tvr) delete tvr;
         }
 
         cv::Point2f project(const cv::Point3f &p3D);
@@ -81,9 +78,6 @@ namespace ORB_SLAM3 {
 
         cv::Mat unprojectJac(const cv::Point2f &p2D);
 
-        bool ReconstructWithTwoViews(const std::vector<cv::KeyPoint>& vKeys1, const std::vector<cv::KeyPoint>& vKeys2, const std::vector<int> &vMatches12,
-                                             cv::Mat &R21, cv::Mat &t21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated);
-
         cv::Mat toK();
 
         bool matchAndtriangulate(const cv::KeyPoint& kp1, const cv::KeyPoint& kp2, GeometricCamera* pOther,
@@ -98,8 +92,6 @@ namespace ORB_SLAM3 {
 
         //Parameters vector corresponds to
         //      [fx, fy, cx, cy]
-
-        TwoViewReconstruction* tvr;
     };
 }
 

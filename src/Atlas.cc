@@ -112,11 +112,6 @@ void Atlas::AddMapPoint(MapPoint* pMP)
     pMapMP->AddMapPoint(pMP);
 }
 
-void Atlas::AddCamera(GeometricCamera* pCam)
-{
-    mvpCameras.push_back(pCam);
-}
-
 void Atlas::SetReferenceMapPoints(const std::vector<MapPoint*> &vpMPs)
 {
     unique_lock<mutex> lock(mMutexAtlas);

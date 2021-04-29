@@ -86,8 +86,6 @@ const string &_nameSeq):
 
     mpCamera = new Pinhole(vCamCalib);
 
-    mpAtlas->AddCamera(mpCamera);
-
     cv::Mat K = cv::Mat::eye(3,3,CV_32F);
     K.at<float>(0,0) = fx;
     K.at<float>(1,1) = fy;
@@ -145,10 +143,7 @@ const string &_nameSeq):
     {
         cv::Mat Tbc;
         fSettings["Tbc"] >> Tbc;
-        cout << endl;
-
-        cout << "Left camera to Imu Transform (Tbc): " << endl << Tbc << endl;
-
+        
         float freq, Ng, Na, Ngw, Naw;
         fSettings["IMU.Frequency"] >> freq;
         fSettings["IMU.NoiseGyro"] >> Ng;
@@ -157,12 +152,6 @@ const string &_nameSeq):
         fSettings["IMU.AccWalk"] >> Naw;
 
         const float sf = sqrt(freq);
-        cout << endl;
-        cout << "IMU frequency: " << freq << " Hz" << endl;
-        cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
-        cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << endl;
-        cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
-        cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << endl;
 
         mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
 
@@ -1066,8 +1055,14 @@ void Tracking::MonocularInitialization()
         }
 
         // Find correspondences
-        ORBmatcher matcher(0.9,true);
-        int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
+        ORBmatcher matcher(
+		0.9,
+		true);
+        int nmatches = matcher.SearchForInitialization(
+		mInitialFrame,mCurrentFrame,
+		mvbPrevMatched,
+		mvIniMatches,
+		100);
 
         // Check if there are enough correspondences
         if(nmatches<100)
@@ -1081,8 +1076,12 @@ void Tracking::MonocularInitialization()
         cv::Mat Rcw; // Current Camera Rotation
         cv::Mat tcw; // Current Camera Translation
         vector<bool> vbTriangulated; // Triangulated Correspondences (mvIniMatches)
-
-        if(mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,mCurrentFrame.mvKeysUn,mvIniMatches,Rcw,tcw,mvIniP3D,vbTriangulated))
+        if(mpInitializer->Initialize(
+            mCurrentFrame,      //当前帧
+            mvIniMatches,       //当前帧和参考帧的特征点的匹配关系
+            Rcw, tcw,           //初始化得到的相机的位姿
+            mvIniP3D,           //进行三角化得到的空间点集合
+            vbTriangulated))    //以及对应于mvIniMatches来讲,其中哪些点被三角化了
         {
             for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
             {

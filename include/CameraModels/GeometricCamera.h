@@ -67,9 +67,6 @@ namespace ORB_SLAM3 {
 
         virtual cv::Mat unprojectJac(const cv::Point2f &p2D) = 0;
 
-        virtual bool ReconstructWithTwoViews(const std::vector<cv::KeyPoint>& vKeys1, const std::vector<cv::KeyPoint>& vKeys2, const std::vector<int> &vMatches12,
-                                             cv::Mat &R21, cv::Mat &t21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated) = 0;
-
         virtual cv::Mat toK() = 0;
 
         float getParameter(const int i){return mvParameters[i];}
