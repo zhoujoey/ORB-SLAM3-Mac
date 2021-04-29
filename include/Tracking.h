@@ -313,7 +313,7 @@ protected:
     double mTime_LocalMapTrack;
     double mTime_NewKF_Dec;
 
-    GeometricCamera* mpCamera, *mpCamera2;
+    GeometricCamera* mpCamera;
 
     int initID, lastID;
 

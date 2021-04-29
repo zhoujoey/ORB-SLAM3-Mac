@@ -4298,6 +4298,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     for(size_t i=0; i<vpEdges12.size();i++)
     {
         ORB_SLAM3::EdgeSim3ProjectXYZ* e12 = vpEdges12[i];
+        //mac crash bug
         ORB_SLAM3::EdgeInverseSim3ProjectXYZ* e21 = vpEdges21[i];
         if(!e12 || !e21)
             continue;

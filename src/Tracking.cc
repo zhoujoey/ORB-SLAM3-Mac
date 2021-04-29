@@ -72,8 +72,7 @@ const string &_nameSeq):
 	time_recently_lost(5.0),
     mnInitialFrameId(0), 
 	mbCreatedMap(false), 
-	mnFirstFrameId(0), 
-	mpCamera2(nullptr)
+	mnFirstFrameId(0)
 {
     // Load camera parameters from settings file
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -1704,8 +1703,6 @@ bool Tracking::NeedNewKeyFrame()
 
     if(mSensor==System::MONOCULAR)
         thRefRatio = 0.9f;
-
-    if(mpCamera2) thRefRatio = 0.75f;
 
     if(mSensor==System::IMU_MONOCULAR)
     {

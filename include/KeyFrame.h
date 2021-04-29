@@ -559,7 +559,7 @@ protected:
     unsigned int mnBackupIdCamera, mnBackupIdCamera2;
 
 public:
-    GeometricCamera* mpCamera, *mpCamera2;
+    GeometricCamera* mpCamera;
 
     //Indexes of stereo observations correspondences
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;

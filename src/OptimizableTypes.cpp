@@ -233,6 +233,11 @@ namespace ORB_SLAM3 {
             pCamera1->setParameter(nextParam,i);
         }
 
+        for(size_t i = 0; i < pCamera2->size(); i++){
+            is >> nextParam;
+            pCamera2->setParameter(nextParam,i);
+        }
+
         setEstimate(g2o::Sim3(cam2world).inverse());
         return true;
     }
@@ -247,6 +252,10 @@ namespace ORB_SLAM3 {
 
         for(size_t i = 0; i < pCamera1->size(); i++){
             os << pCamera1->getParameter(i) << " ";
+        }
+
+        for(size_t i = 0; i < pCamera2->size(); i++){
+            os << pCamera2->getParameter(i) << " ";
         }
 
         return os.good();

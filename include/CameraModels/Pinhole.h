@@ -86,8 +86,6 @@ namespace ORB_SLAM3 {
 
         cv::Mat toK();
 
-        bool epipolarConstrain(GeometricCamera* pCamera2, const cv::KeyPoint& kp1, const cv::KeyPoint& kp2, const cv::Mat& R12, const cv::Mat& t12, const float sigmaLevel, const float unc);
-
         bool matchAndtriangulate(const cv::KeyPoint& kp1, const cv::KeyPoint& kp2, GeometricCamera* pOther,
                                  cv::Mat& Tcw1, cv::Mat& Tcw2,
                                  const float sigmaLevel1, const float sigmaLevel2,

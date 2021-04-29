@@ -487,7 +487,6 @@ void LocalMapping::CreateNewMapPoints()
                                                                          : (idx1 < mpCurrentKeyFrame -> NLeft) ? mpCurrentKeyFrame -> mvKeys[idx1]
                                                                                                                : mpCurrentKeyFrame -> mvKeysRight[idx1 - mpCurrentKeyFrame -> NLeft];
             const float kp1_ur=mpCurrentKeyFrame->mvuRight[idx1];
-            bool bStereo1 = (!mpCurrentKeyFrame->mpCamera2 && kp1_ur>=0);
             const bool bRight1 = (mpCurrentKeyFrame -> NLeft == -1 || idx1 < mpCurrentKeyFrame -> NLeft) ? false
                                                                                : true;
 
@@ -496,76 +495,8 @@ void LocalMapping::CreateNewMapPoints()
                                                                                      : pKF2 -> mvKeysRight[idx2 - pKF2 -> NLeft];
 
             const float kp2_ur = pKF2->mvuRight[idx2];
-            bool bStereo2 = (!pKF2->mpCamera2 && kp2_ur>=0);
             const bool bRight2 = (pKF2 -> NLeft == -1 || idx2 < pKF2 -> NLeft) ? false
                                                                                : true;
-
-            if(mpCurrentKeyFrame->mpCamera2 && pKF2->mpCamera2){
-                if(bRight1 && bRight2){
-                    Rcw1 = mpCurrentKeyFrame->GetRightRotation();
-                    Rwc1 = Rcw1.t();
-                    tcw1 = mpCurrentKeyFrame->GetRightTranslation();
-                    Tcw1 = mpCurrentKeyFrame->GetRightPose();
-                    Ow1 = mpCurrentKeyFrame->GetRightCameraCenter();
-
-                    Rcw2 = pKF2->GetRightRotation();
-                    Rwc2 = Rcw2.t();
-                    tcw2 = pKF2->GetRightTranslation();
-                    Tcw2 = pKF2->GetRightPose();
-                    Ow2 = pKF2->GetRightCameraCenter();
-
-                    pCamera1 = mpCurrentKeyFrame->mpCamera2;
-                    pCamera2 = pKF2->mpCamera2;
-                }
-                else if(bRight1 && !bRight2){
-                    Rcw1 = mpCurrentKeyFrame->GetRightRotation();
-                    Rwc1 = Rcw1.t();
-                    tcw1 = mpCurrentKeyFrame->GetRightTranslation();
-                    Tcw1 = mpCurrentKeyFrame->GetRightPose();
-                    Ow1 = mpCurrentKeyFrame->GetRightCameraCenter();
-
-                    Rcw2 = pKF2->GetRotation();
-                    Rwc2 = Rcw2.t();
-                    tcw2 = pKF2->GetTranslation();
-                    Tcw2 = pKF2->GetPose();
-                    Ow2 = pKF2->GetCameraCenter();
-
-                    pCamera1 = mpCurrentKeyFrame->mpCamera2;
-                    pCamera2 = pKF2->mpCamera;
-                }
-                else if(!bRight1 && bRight2){
-                    Rcw1 = mpCurrentKeyFrame->GetRotation();
-                    Rwc1 = Rcw1.t();
-                    tcw1 = mpCurrentKeyFrame->GetTranslation();
-                    Tcw1 = mpCurrentKeyFrame->GetPose();
-                    Ow1 = mpCurrentKeyFrame->GetCameraCenter();
-
-                    Rcw2 = pKF2->GetRightRotation();
-                    Rwc2 = Rcw2.t();
-                    tcw2 = pKF2->GetRightTranslation();
-                    Tcw2 = pKF2->GetRightPose();
-                    Ow2 = pKF2->GetRightCameraCenter();
-
-                    pCamera1 = mpCurrentKeyFrame->mpCamera;
-                    pCamera2 = pKF2->mpCamera2;
-                }
-                else{
-                    Rcw1 = mpCurrentKeyFrame->GetRotation();
-                    Rwc1 = Rcw1.t();
-                    tcw1 = mpCurrentKeyFrame->GetTranslation();
-                    Tcw1 = mpCurrentKeyFrame->GetPose();
-                    Ow1 = mpCurrentKeyFrame->GetCameraCenter();
-
-                    Rcw2 = pKF2->GetRotation();
-                    Rwc2 = Rcw2.t();
-                    tcw2 = pKF2->GetTranslation();
-                    Tcw2 = pKF2->GetPose();
-                    Ow2 = pKF2->GetCameraCenter();
-
-                    pCamera1 = mpCurrentKeyFrame->mpCamera;
-                    pCamera2 = pKF2->mpCamera;
-                }
-            }
 
             // Check parallax between rays
             cv::Mat xn1 = pCamera1->unprojectMat(kp1.pt);
@@ -574,21 +505,15 @@ void LocalMapping::CreateNewMapPoints()
             cv::Mat ray1 = Rwc1*xn1;
             cv::Mat ray2 = Rwc2*xn2;
             const float cosParallaxRays = ray1.dot(ray2)/(cv::norm(ray1)*cv::norm(ray2));
-
             float cosParallaxStereo = cosParallaxRays+1;
             float cosParallaxStereo1 = cosParallaxStereo;
             float cosParallaxStereo2 = cosParallaxStereo;
 
-            if(bStereo1)
-                cosParallaxStereo1 = cos(2*atan2(mpCurrentKeyFrame->mb/2,mpCurrentKeyFrame->mvDepth[idx1]));
-            else if(bStereo2)
-                cosParallaxStereo2 = cos(2*atan2(pKF2->mb/2,pKF2->mvDepth[idx2]));
-
             cosParallaxStereo = min(cosParallaxStereo1,cosParallaxStereo2);
 
             cv::Mat x3D;
-            if(cosParallaxRays<cosParallaxStereo && cosParallaxRays>0 && (bStereo1 || bStereo2 ||
-               (cosParallaxRays<0.9998 && mbInertial) || (cosParallaxRays<0.9998 && !mbInertial)))
+            if(cosParallaxRays<cosParallaxStereo && cosParallaxRays>0 && 
+            ((cosParallaxRays<0.9998 && mbInertial) || (cosParallaxRays<0.9998 && !mbInertial)))
             {
                 // Linear Triangulation Method
                 cv::Mat A(4,4,CV_32F);
@@ -608,14 +533,6 @@ void LocalMapping::CreateNewMapPoints()
                 // Euclidean coordinates
                 x3D = x3D.rowRange(0,3)/x3D.at<float>(3);
 
-            }
-            else if(bStereo1 && cosParallaxStereo1<cosParallaxStereo2)
-            {
-                x3D = mpCurrentKeyFrame->UnprojectStereo(idx1);
-            }
-            else if(bStereo2 && cosParallaxStereo2<cosParallaxStereo1)
-            {
-                x3D = pKF2->UnprojectStereo(idx2);
             }
             else
             {
@@ -640,52 +557,26 @@ void LocalMapping::CreateNewMapPoints()
             const float y1 = Rcw1.row(1).dot(x3Dt)+tcw1.at<float>(1);
             const float invz1 = 1.0/z1;
 
-            if(!bStereo1)
-            {
-                cv::Point2f uv1 = pCamera1->project(cv::Point3f(x1,y1,z1));
-                float errX1 = uv1.x - kp1.pt.x;
-                float errY1 = uv1.y - kp1.pt.y;
+            cv::Point2f uv1 = pCamera1->project(cv::Point3f(x1,y1,z1));
+            float errX1 = uv1.x - kp1.pt.x;
+            float errY1 = uv1.y - kp1.pt.y;
 
-                if((errX1*errX1+errY1*errY1)>5.991*sigmaSquare1)
-                    continue;
+            if((errX1*errX1+errY1*errY1)>5.991*sigmaSquare1)
+                continue;
 
-            }
-            else
-            {
-                float u1 = fx1*x1*invz1+cx1;
-                float u1_r = u1 - mpCurrentKeyFrame->mbf*invz1;
-                float v1 = fy1*y1*invz1+cy1;
-                float errX1 = u1 - kp1.pt.x;
-                float errY1 = v1 - kp1.pt.y;
-                float errX1_r = u1_r - kp1_ur;
-                if((errX1*errX1+errY1*errY1+errX1_r*errX1_r)>7.8*sigmaSquare1)
-                    continue;
-            }
+
 
             //Check reprojection error in second keyframe
             const float sigmaSquare2 = pKF2->mvLevelSigma2[kp2.octave];
             const float x2 = Rcw2.row(0).dot(x3Dt)+tcw2.at<float>(0);
             const float y2 = Rcw2.row(1).dot(x3Dt)+tcw2.at<float>(1);
             const float invz2 = 1.0/z2;
-            if(!bStereo2)
-            {
-                cv::Point2f uv2 = pCamera2->project(cv::Point3f(x2,y2,z2));
-                float errX2 = uv2.x - kp2.pt.x;
-                float errY2 = uv2.y - kp2.pt.y;
-                if((errX2*errX2+errY2*errY2)>5.991*sigmaSquare2)
-                    continue;
-            }
-            else
-            {
-                float u2 = fx2*x2*invz2+cx2;
-                float u2_r = u2 - mpCurrentKeyFrame->mbf*invz2;
-                float v2 = fy2*y2*invz2+cy2;
-                float errX2 = u2 - kp2.pt.x;
-                float errY2 = v2 - kp2.pt.y;
-                float errX2_r = u2_r - kp2_ur;
-                if((errX2*errX2+errY2*errY2+errX2_r*errX2_r)>7.8*sigmaSquare2)
-                    continue;
-            }
+
+            cv::Point2f uv2 = pCamera2->project(cv::Point3f(x2,y2,z2));
+            float errX2 = uv2.x - kp2.pt.x;
+            float errY2 = uv2.y - kp2.pt.y;
+            if((errX2*errX2+errY2*errY2)>5.991*sigmaSquare2)
+                continue;
 
             //Check scale consistency
             cv::Mat normal1 = x3D-Ow1;

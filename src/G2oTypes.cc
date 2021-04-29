@@ -29,11 +29,7 @@ ImuCamPose::ImuCamPose(KeyFrame *pKF):its(0)
     Rwb = Converter::toMatrix3d(pKF->GetImuRotation());
 
     // Load camera poses
-    int num_cams;
-    if(pKF->mpCamera2)
-        num_cams=2;
-    else
-        num_cams=1;
+    int num_cams=1;
 
     tcw.resize(num_cams);
     Rcw.resize(num_cams);
@@ -53,18 +49,6 @@ ImuCamPose::ImuCamPose(KeyFrame *pKF):its(0)
     pCamera[0] = pKF->mpCamera;
     bf = pKF->mbf;
 
-    if(num_cams>1)
-    {
-        Eigen::Matrix4d Trl = Converter::toMatrix4d(pKF->mTrl);
-        Rcw[1] = Trl.block<3,3>(0,0)*Rcw[0];
-        tcw[1] = Trl.block<3,3>(0,0)*tcw[0]+Trl.block<3,1>(0,3);
-        tcb[1] = Trl.block<3,3>(0,0)*tcb[0]+Trl.block<3,1>(0,3);
-        Rcb[1] = Trl.block<3,3>(0,0)*Rcb[0];
-        Rbc[1] = Rcb[1].transpose();
-        tbc[1] = -Rbc[1]*tcb[1];
-        pCamera[1] = pKF->mpCamera2;
-    }
-
     // For posegraph 4DoF
     Rwb0 = Rwb;
     DR.setIdentity();
@@ -77,11 +61,7 @@ ImuCamPose::ImuCamPose(Frame *pF):its(0)
     Rwb = Converter::toMatrix3d(pF->GetImuRotation());
 
     // Load camera poses
-    int num_cams;
-    if(pF->mpCamera2)
-        num_cams=2;
-    else
-        num_cams=1;
+    int num_cams=1;
 
     tcw.resize(num_cams);
     Rcw.resize(num_cams);
@@ -100,18 +80,6 @@ ImuCamPose::ImuCamPose(Frame *pF):its(0)
     tbc[0] = Converter::toVector3d(pF->mImuCalib.Tbc.rowRange(0,3).col(3));
     pCamera[0] = pF->mpCamera;
     bf = pF->mbf;
-
-    if(num_cams>1)
-    {
-        Eigen::Matrix4d Trl = Converter::toMatrix4d(pF->mTrl);
-        Rcw[1] = Trl.block<3,3>(0,0)*Rcw[0];
-        tcw[1] = Trl.block<3,3>(0,0)*tcw[0]+Trl.block<3,1>(0,3);
-        tcb[1] = Trl.block<3,3>(0,0)*tcb[0]+Trl.block<3,1>(0,3);
-        Rcb[1] = Trl.block<3,3>(0,0)*Rcb[0];
-        Rbc[1] = Rcb[1].transpose();
-        tbc[1] = -Rbc[1]*tcb[1];
-        pCamera[1] = pF->mpCamera2;
-    }
 
     // For posegraph 4DoF
     Rwb0 = Rwb;

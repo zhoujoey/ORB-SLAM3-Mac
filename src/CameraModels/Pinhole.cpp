@@ -119,30 +119,6 @@ namespace ORB_SLAM3 {
         return K;
     }
 
-    bool Pinhole::epipolarConstrain(GeometricCamera* pCamera2,  const cv::KeyPoint &kp1, const cv::KeyPoint &kp2, const cv::Mat &R12, const cv::Mat &t12, const float sigmaLevel, const float unc) {
-        //Compute Fundamental Matrix
-        cv::Mat t12x = SkewSymmetricMatrix(t12);
-        cv::Mat K1 = this->toK();
-        cv::Mat K2 = pCamera2->toK();
-        cv::Mat F12 = K1.t().inv()*t12x*R12*K2.inv();
-
-        // Epipolar line in second image l = x1'F12 = [a b c]
-        const float a = kp1.pt.x*F12.at<float>(0,0)+kp1.pt.y*F12.at<float>(1,0)+F12.at<float>(2,0);
-        const float b = kp1.pt.x*F12.at<float>(0,1)+kp1.pt.y*F12.at<float>(1,1)+F12.at<float>(2,1);
-        const float c = kp1.pt.x*F12.at<float>(0,2)+kp1.pt.y*F12.at<float>(1,2)+F12.at<float>(2,2);
-
-        const float num = a*kp2.pt.x+b*kp2.pt.y+c;
-
-        const float den = a*a+b*b;
-
-        if(den==0)
-            return false;
-
-        const float dsqr = num*num/den;
-
-        return dsqr<3.84*unc;
-    }
-
     std::ostream & operator<<(std::ostream &os, const Pinhole &ph) {
         os << ph.mvParameters[0] << " " << ph.mvParameters[1] << " " << ph.mvParameters[2] << " " << ph.mvParameters[3];
         return os;

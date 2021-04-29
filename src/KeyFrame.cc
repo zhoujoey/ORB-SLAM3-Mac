@@ -60,7 +60,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mImuCalib(F.mImuCalib), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
     mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mDistCoef(F.mDistCoef), mbNotErase(false), mnDataset(F.mnDataset),
     mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mbCurrentPlaceRecognition(false), mNameFile(F.mNameFile), mbHasHessian(false), mnMergeCorrectedForKF(0),
-    mpCamera(F.mpCamera), mpCamera2(F.mpCamera2),
+    mpCamera(F.mpCamera), 
     mvLeftToRightMatch(F.mvLeftToRightMatch),mvRightToLeftMatch(F.mvRightToLeftMatch),mTlr(F.mTlr.clone()),
     mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.mTrl), mnNumberOfOpt(0)
 {
@@ -968,9 +968,6 @@ void KeyFrame::PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP, set<GeometricC
     //cout << "KeyFrame: ID from Camera1 stored; " << mnBackupIdCamera << endl;
 
     mnBackupIdCamera2 = -1;
-    if(mpCamera2 && spCam.find(mpCamera2) != spCam.end())
-        mnBackupIdCamera2 = mpCamera2->GetId();
-    //cout << "KeyFrame: ID from Camera2 stored; " << mnBackupIdCamera2 << endl;
 
     //Inertial data
     mBackupPrevKFId = -1;
@@ -1042,10 +1039,6 @@ void KeyFrame::PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsi
     if(mnBackupIdCamera >= 0)
     {
         mpCamera = mpCamId[mnBackupIdCamera];
-    }
-    if(mnBackupIdCamera2 >= 0)
-    {
-        mpCamera2 = mpCamId[mnBackupIdCamera2];
     }
 
     //Inertial data

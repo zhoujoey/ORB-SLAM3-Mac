@@ -90,8 +90,7 @@ Frame::Frame(const Frame &frame)
 	 mpLastKeyFrame(frame.mpLastKeyFrame), 
 	 mbImuPreintegrated(frame.mbImuPreintegrated), 
 	 mpMutexImu(frame.mpMutexImu),
-     mpCamera(frame.mpCamera), 
-	 mpCamera2(frame.mpCamera2), 
+     mpCamera(frame.mpCamera),  
 	 Nleft(frame.Nleft), 
 	 Nright(frame.Nright),
      monoLeft(frame.monoLeft), 
@@ -129,16 +128,10 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera),
-     mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)
+     mTimeStereoMatch(0), mTimeORB_Ext(0)
 {
-    cout<<"Frame --- mono 224 \n ------\n"<<endl;
     // Frame ID
     mnId=nNextId++;
-
-    // imGray(cv::Range(0,175),cv::Range(0,512)) = cv::Mat::zeros(cv::Size(512, 175),CV_8UC1);
-    // imGray(cv::Range(350,512),cv::Range(260,360)) = cv::Mat::zeros(cv::Size(100, 162),CV_8UC1);
-
-    // imGray = imGray(cv::Range(250,512),cv::Range(0,512)).clone();
 
     // Scale Level Info
     mnScaleLevels = mpORBextractorLeft->GetLevels();
@@ -854,95 +847,6 @@ void Frame::setIntegrated()
     mbImuPreintegrated = true;
 }
 
-Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, GeometricCamera* pCamera2, cv::Mat& Tlr,Frame* pPrevF, const IMU::Calib &ImuCalib)
-        :mpcpi(NULL), mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-         mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera), mpCamera2(pCamera2), mTlr(Tlr)
-{
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
-    imgLeft = imLeft.clone();
-    imgRight = imRight.clone();
-    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-
-    // Frame ID
-    mnId=nNextId++;
-
-    // Scale Level Info
-    mnScaleLevels = mpORBextractorLeft->GetLevels();
-    mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
-    mfLogScaleFactor = log(mfScaleFactor);
-    mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
-    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-    mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
-    mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
-
-    // ORB extraction
-    thread threadLeft(&Frame::ExtractORB,this,0,imLeft,0,511);
-    thread threadRight(&Frame::ExtractORB,this,1,imRight,0,511);
-    threadLeft.join();
-    threadRight.join();
-    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-
-    Nleft = mvKeys.size();
-    Nright = mvKeysRight.size();
-    N = Nleft + Nright;
-
-    if(N == 0)
-        return;
-
-    // This is done only for the first Frame (or after a change in the calibration)
-    if(mbInitialComputations)
-    {
-        ComputeImageBounds(imLeft);
-
-        mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
-        mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
-
-        fx = K.at<float>(0,0);
-        fy = K.at<float>(1,1);
-        cx = K.at<float>(0,2);
-        cy = K.at<float>(1,2);
-        invfx = 1.0f/fx;
-        invfy = 1.0f/fy;
-
-        mbInitialComputations=false;
-    }
-
-    mb = mbf / fx;
-
-    mRlr = mTlr.rowRange(0,3).colRange(0,3);
-    mtlr = mTlr.col(3);
-
-    cv::Mat Rrl = mTlr.rowRange(0,3).colRange(0,3).t();
-    cv::Mat trl = Rrl * (-1 * mTlr.col(3));
-
-    cv::hconcat(Rrl,trl,mTrl);
-
-
-    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
-
-    //Put all descriptors in the same matrix
-    cv::vconcat(mDescriptors,mDescriptorsRight,mDescriptors);
-
-    mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(nullptr));
-    mvbOutlier = vector<bool>(N,false);
-
-    AssignFeaturesToGrid();
-    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
-
-    mpMutexImu = new std::mutex();
-
-    UndistortKeyPoints();
-    std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now();
-
-    double t_read = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
-    double t_orbextract = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t2 - t1).count();
-    double t_stereomatches = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t3 - t2).count();
-    double t_assign = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t4 - t3).count();
-    double t_undistort = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t5 - t4).count();
-
-
-
-}
 
 bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight) {
     // 3D in absolute coordinates
@@ -973,8 +877,7 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
 
     // Project in image and check it is not outside
     cv::Point2f uv;
-    if(bRight) uv = mpCamera2->project(Pc);
-    else uv = mpCamera->project(Pc);
+    uv = mpCamera->project(Pc);
 
     if(uv.x<mnMinX || uv.x>mnMaxX)
         return false;
