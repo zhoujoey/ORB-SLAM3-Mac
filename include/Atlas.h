@@ -118,10 +118,6 @@ public:
     void SetImuInitialized();
     bool isImuInitialized();
 
-    // Function for garantee the correction of serialization of this object
-    void PreSave();
-    void PostLoad();
-
     void SetKeyFrameDababase(KeyFrameDatabase* pKFDB);
     KeyFrameDatabase* GetKeyFrameDatabase();
 

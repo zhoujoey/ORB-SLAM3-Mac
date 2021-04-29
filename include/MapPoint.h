@@ -177,9 +177,6 @@ public:
 
     void PrintObservations();
 
-    void PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP);
-    void PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid);
-
 public:
     long unsigned int mnId;
     static long unsigned int nNextId;
