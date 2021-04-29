@@ -159,7 +159,7 @@ void MapPoint::AddObservation(KeyFrame* pKF, int idx)
 
     mObservations[pKF]=indexes;
 
-    if(!pKF->mpCamera2 && pKF->mvuRight[idx]>=0)
+    if(pKF->mvuRight[idx]>=0)
         nObs+=2;
     else
         nObs++;
@@ -177,7 +177,7 @@ void MapPoint::EraseObservation(KeyFrame* pKF)
             int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
 
             if(leftIndex != -1){
-                if(!pKF->mpCamera2 && pKF->mvuRight[leftIndex]>=0)
+                if( pKF->mvuRight[leftIndex]>=0)
                     nObs-=2;
                 else
                     nObs--;

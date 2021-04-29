@@ -43,12 +43,37 @@ namespace ORB_SLAM3
 {
 
 
-Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string &_nameSeq):
-    mState(NO_IMAGES_YET), mSensor(sensor), mTrackedFr(0), mbStep(false),
-    mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
-    mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys), mpViewer(NULL),
-    mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), mnLastRelocFrameId(0), time_recently_lost(5.0),
-    mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr)
+Tracking::Tracking(
+System *pSys, 
+ORBVocabulary* pVoc, 
+FrameDrawer *pFrameDrawer, 
+MapDrawer *pMapDrawer, 
+Atlas *pAtlas, 
+KeyFrameDatabase* pKFDB, 
+const string &strSettingPath, 
+const int sensor, 
+const string &_nameSeq):
+    mState(NO_IMAGES_YET), 
+	mSensor(sensor), 
+	mTrackedFr(0), 
+	mbStep(false),
+    mbOnlyTracking(false), 
+	mbMapUpdated(false), 
+	mbVO(false), 
+	mpORBVocabulary(pVoc), 
+	mpKeyFrameDB(pKFDB),
+    mpInitializer(static_cast<Initializer*>(NULL)), 
+	mpSystem(pSys), 
+	mpViewer(NULL),
+    mpFrameDrawer(pFrameDrawer), 
+	mpMapDrawer(pMapDrawer), 
+	mpAtlas(pAtlas), 
+	mnLastRelocFrameId(0), 
+	time_recently_lost(5.0),
+    mnInitialFrameId(0), 
+	mbCreatedMap(false), 
+	mnFirstFrameId(0), 
+	mpCamera2(nullptr)
 {
     // Load camera parameters from settings file
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
