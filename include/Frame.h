@@ -56,9 +56,21 @@ public:
     // ~Frame();
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
-    void ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1);
+    /**
+     * @brief 提取图像的ORB特征，提取的关键点存放在mvKeys，描述子存放在mDescriptors
+     * 
+     * @param[in] flag          标记是左图还是右图。0：左图  1：右图
+     * @param[in] im            等待提取特征点的图像
+     */
+    void ExtractORB(int flag, const cv::Mat &im);
 
     // Compute Bag of Words representation.
+    // 存放在mBowVec中
+    /**
+     * @brief 计算词袋模型 
+     * @details 计算词包 mBowVec 和 mFeatVec ，其中 mFeatVec 记录了属于第i个node（在第4层）的ni个描述子
+     * @see CreateInitialMapMonocular() TrackReferenceKeyFrame() Relocalization()
+     */
     void ComputeBoW();
 
     // Set the camera pose. (Imu pose is not modified!)

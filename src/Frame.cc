@@ -143,8 +143,8 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
     // ORB extraction
-
-    ExtractORB(0,imGray,0,1000);
+	// Step 3 对这个单目图像进行提取特征点, 第一个参数0-左图， 1-右图
+    ExtractORB(0, imGray);
 
 
     N = mvKeys.size();
@@ -216,44 +216,50 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
 
 void Frame::AssignFeaturesToGrid()
 {
-    // Fill matrix with points
-    const int nCells = FRAME_GRID_COLS*FRAME_GRID_ROWS;
-
-    int nReserve = 0.5f*N/(nCells);
-
+    // Step 1  给存储特征点的网格数组 Frame::mGrid 预分配空间
+	// ? 这里0.5 是为什么？节省空间？
+    // FRAME_GRID_COLS = 64，FRAME_GRID_ROWS=48
+    int nReserve = 0.5f*N/(FRAME_GRID_COLS*FRAME_GRID_ROWS);
+	//开始对mGrid这个二维数组中的每一个vector元素遍历并预分配空间
     for(unsigned int i=0; i<FRAME_GRID_COLS;i++)
-        for (unsigned int j=0; j<FRAME_GRID_ROWS;j++){
+        for (unsigned int j=0; j<FRAME_GRID_ROWS;j++)
             mGrid[i][j].reserve(nReserve);
-            if(Nleft != -1){
-                mGridRight[i][j].reserve(nReserve);
-            }
-        }
 
 
 
     for(int i=0;i<N;i++)
     {
-        const cv::KeyPoint &kp = (Nleft == -1) ? mvKeysUn[i]
-                                                 : (i < Nleft) ? mvKeys[i]
-                                                                 : mvKeysRight[i - Nleft];
+		//从类的成员变量中获取已经去畸变后的特征点
+        const cv::KeyPoint &kp = mvKeysUn[i];
 
+		//存储某个特征点所在网格的网格坐标，nGridPosX范围：[0,FRAME_GRID_COLS], nGridPosY范围：[0,FRAME_GRID_ROWS]
         int nGridPosX, nGridPosY;
-        if(PosInGrid(kp,nGridPosX,nGridPosY)){
-            if(Nleft == -1 || i < Nleft)
-                mGrid[nGridPosX][nGridPosY].push_back(i);
-            else
-                mGridRight[nGridPosX][nGridPosY].push_back(i - Nleft);
-        }
+		// 计算某个特征点所在网格的网格坐标，如果找到特征点所在的网格坐标，记录在nGridPosX,nGridPosY里，返回true，没找到返回false
+        if(PosInGrid(kp,nGridPosX,nGridPosY))
+			//如果找到特征点所在网格坐标，将这个特征点的索引添加到对应网格的数组mGrid中
+            mGrid[nGridPosX][nGridPosY].push_back(i);
     }
 }
 
-void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
+/**
+ * @brief 提取图像的ORB特征点，提取的关键点存放在mvKeys，描述子存放在mDescriptors
+ * 
+ * @param[in] flag          标记是左图还是右图。0：左图  1：右图
+ * @param[in] im            等待提取特征点的图像
+ */
+void Frame::ExtractORB(int flag, const cv::Mat &im)
 {
-    vector<int> vLapping = {x0,x1};
+    // 判断是左图还是右图
     if(flag==0)
-        monoLeft = (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);
+        // 左图的话就套使用左图指定的特征点提取器，并将提取结果保存到对应的变量中 
+        // 这里使用了仿函数来完成，重载了括号运算符 ORBextractor::operator() 
+        (*mpORBextractorLeft)(im,				//待提取特征点的图像
+							  cv::Mat(),		//掩摸图像, 实际没有用到
+							  mvKeys,			//输出变量，用于保存提取后的特征点
+							  mDescriptors);	//输出变量，用于保存特征点的描述子
     else
-        monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
+        // 右图的话就需要使用右图指定的特征点提取器，并将提取结果保存到对应的变量中 
+        (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight);
 }
 
 void Frame::SetPose(cv::Mat Tcw)
@@ -322,93 +328,67 @@ cv::Mat Frame::GetImuPose()
 
 bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
 {
-    if(Nleft == -1){
-        // cout << "\na";
-        pMP->mbTrackInView = false;
-        pMP->mTrackProjX = -1;
-        pMP->mTrackProjY = -1;
+    // mbTrackInView是决定一个地图点是否进行重投影的标志
+    // 这个标志的确定要经过多个函数的确定，isInFrustum()只是其中的一个验证关卡。这里默认设置为否
+    pMP->mbTrackInView = false;
 
-        // 3D in absolute coordinates
-        cv::Mat P = pMP->GetWorldPos();
+    // 3D in absolute coordinates
+    cv::Mat P = pMP->GetWorldPos();
 
-        // cout << "b";
+    // 3D in camera coordinates
+    const cv::Mat Pc = mRcw*P+mtcw;
+    const float &PcX = Pc.at<float>(0);
+    const float &PcY = Pc.at<float>(1);
+    const float Pc_dist = cv::norm(Pc);
 
-        // 3D in camera coordinates
-        const cv::Mat Pc = mRcw*P+mtcw;
-        const float Pc_dist = cv::norm(Pc);
+    // Check positive depth
+    const float &PcZ = Pc.at<float>(2);
+    if(PcZ<0.0f)
+        return false;
 
-        // Check positive depth
-        const float &PcZ = Pc.at<float>(2);
-        const float invz = 1.0f/PcZ;
-        if(PcZ<0.0f)
-            return false;
+    const float invz = 1.0f/PcZ;
+    const float u=fx*PcX*invz+cx;
+    const float v=fy*PcY*invz+cy;
 
-        const cv::Point2f uv = mpCamera->project(Pc);
+    if(u<mnMinX || u>mnMaxX)
+        return false;
+    if(v<mnMinY || v>mnMaxY)
+        return false;
 
-        // cout << "c";
+    // Check distance is in the scale invariance region of the MapPoint
+    const float maxDistance = pMP->GetMaxDistanceInvariance();
+    const float minDistance = pMP->GetMinDistanceInvariance();
+    const cv::Mat PO = P-mOw;
+    const float dist = cv::norm(PO);
 
-        if(uv.x<mnMinX || uv.x>mnMaxX)
-            return false;
-        if(uv.y<mnMinY || uv.y>mnMaxY)
-            return false;
+    if(dist<minDistance || dist>maxDistance)
+        return false;
 
-        // cout << "d";
-        pMP->mTrackProjX = uv.x;
-        pMP->mTrackProjY = uv.y;
+    // Check viewing angle
+    cv::Mat Pn = pMP->GetNormal();
 
-        // Check distance is in the scale invariance region of the MapPoint
-        const float maxDistance = pMP->GetMaxDistanceInvariance();
-        const float minDistance = pMP->GetMinDistanceInvariance();
-        const cv::Mat PO = P-mOw;
-        const float dist = cv::norm(PO);
+    const float viewCos = PO.dot(Pn)/dist;
 
-        if(dist<minDistance || dist>maxDistance)
-            return false;
+    if(viewCos<viewingCosLimit)
+        return false;
 
-        // cout << "e";
+    // Predict scale in the image
+    const int nPredictedLevel = pMP->PredictScale(dist,
+    this);
 
-        // Check viewing angle
-        cv::Mat Pn = pMP->GetNormal();
+    // Data used by the tracking
+    pMP->mbTrackInView = true;
+    pMP->mTrackProjX = u;
+    pMP->mTrackProjXR = u - mbf*invz;
 
-        // cout << "f";
+    pMP->mTrackDepth = Pc_dist;
 
-        const float viewCos = PO.dot(Pn)/dist;
 
-        if(viewCos<viewingCosLimit)
-            return false;
+    pMP->mTrackProjY = v;
+    pMP->mnTrackScaleLevel= nPredictedLevel;
+    pMP->mTrackViewCos = viewCos;
 
-        // Predict scale in the image
-        const int nPredictedLevel = pMP->PredictScale(dist,this);
-
-        // cout << "g";
-
-        // Data used by the tracking
-        pMP->mbTrackInView = true;
-        pMP->mTrackProjX = uv.x;
-        pMP->mTrackProjXR = uv.x - mbf*invz;
-
-        pMP->mTrackDepth = Pc_dist;
-        // cout << "h";
-
-        pMP->mTrackProjY = uv.y;
-        pMP->mnTrackScaleLevel= nPredictedLevel;
-        pMP->mTrackViewCos = viewCos;
-
-        // cout << "i";
-
-        return true;
-    }
-    else{
-        pMP->mbTrackInView = false;
-        pMP->mbTrackInViewR = false;
-        pMP -> mnTrackScaleLevel = -1;
-        pMP -> mnTrackScaleLevelR = -1;
-
-        pMP->mbTrackInView = isInFrustumChecks(pMP,viewingCosLimit);
-        pMP->mbTrackInViewR = isInFrustumChecks(pMP,viewingCosLimit,true);
-
-        return pMP->mbTrackInView || pMP->mbTrackInViewR;
-    }
+    return true;
 }
 
 bool Frame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v)
@@ -487,51 +467,55 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
     vector<size_t> vIndices;
     vIndices.reserve(N);
 
-    float factorX = r;
-    float factorY = r;
+    // Step 1 计算半径为r圆左右上下边界所在的网格列和行的id
+    // 查找半径为r的圆左侧边界所在网格列坐标。这个地方有点绕，慢慢理解下：
+    // (mnMaxX-mnMinX)/FRAME_GRID_COLS：表示列方向每个网格可以平均分得几个像素（肯定大于1）
+    // mfGridElementWidthInv=FRAME_GRID_COLS/(mnMaxX-mnMinX) 是上面倒数，表示每个像素可以均分几个网格列（肯定小于1）
+	// (x-mnMinX-r)，可以看做是从图像的左边界mnMinX到半径r的圆的左边界区域占的像素列数
+	// 两者相乘，就是求出那个半径为r的圆的左侧边界在哪个网格列中
+    // 保证nMinCellX 结果大于等于0
+    const int nMinCellX = max(0,(int)floor( (x-mnMinX-r)*mfGridElementWidthInv));
 
-    /*cout << "fX " << factorX << endl;
-    cout << "fY " << factorY << endl;*/
 
-    const int nMinCellX = max(0,(int)floor((x-mnMinX-factorX)*mfGridElementWidthInv));
+	// 如果最终求得的圆的左边界所在的网格列超过了设定了上限，那么就说明计算出错，找不到符合要求的特征点，返回空vector
     if(nMinCellX>=FRAME_GRID_COLS)
-    {
         return vIndices;
-    }
 
-    const int nMaxCellX = min((int)FRAME_GRID_COLS-1,(int)ceil((x-mnMinX+factorX)*mfGridElementWidthInv));
+	// 计算圆所在的右边界网格列索引
+    const int nMaxCellX = min((int)FRAME_GRID_COLS-1, (int)ceil((x-mnMinX+r)*mfGridElementWidthInv));
+	// 如果计算出的圆右边界所在的网格不合法，说明该特征点不好，直接返回空vector
     if(nMaxCellX<0)
-    {
         return vIndices;
-    }
 
-    const int nMinCellY = max(0,(int)floor((y-mnMinY-factorY)*mfGridElementHeightInv));
+	//后面的操作也都是类似的，计算出这个圆上下边界所在的网格行的id
+    const int nMinCellY = max(0,(int)floor((y-mnMinY-r)*mfGridElementHeightInv));
     if(nMinCellY>=FRAME_GRID_ROWS)
-    {
         return vIndices;
-    }
 
-    const int nMaxCellY = min((int)FRAME_GRID_ROWS-1,(int)ceil((y-mnMinY+factorY)*mfGridElementHeightInv));
+    const int nMaxCellY = min((int)FRAME_GRID_ROWS-1,(int)ceil((y-mnMinY+r)*mfGridElementHeightInv));
     if(nMaxCellY<0)
-    {
         return vIndices;
-    }
 
+    // 检查需要搜索的图像金字塔层数范围是否符合要求
+    //? 疑似bug。(minLevel>0) 后面条件 (maxLevel>=0)肯定成立
+    //? 改为 const bool bCheckLevels = (minLevel>=0) || (maxLevel>=0);
     const bool bCheckLevels = (minLevel>0) || (maxLevel>=0);
 
     for(int ix = nMinCellX; ix<=nMaxCellX; ix++)
     {
         for(int iy = nMinCellY; iy<=nMaxCellY; iy++)
         {
-            const vector<size_t> vCell = (!bRight) ? mGrid[ix][iy] : mGridRight[ix][iy];
+            // 获取这个网格内的所有特征点在 Frame::mvKeysUn 中的索引
+            const vector<size_t> vCell = mGrid[ix][iy];
+			// 如果这个网格中没有特征点，那么跳过这个网格继续下一个
             if(vCell.empty())
                 continue;
 
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const cv::KeyPoint &kpUn = (Nleft == -1) ? mvKeysUn[vCell[j]]
-                                                         : (!bRight) ? mvKeys[vCell[j]]
-                                                                     : mvKeysRight[vCell[j]];
+				// 根据索引先读取这个特征点 
+                const cv::KeyPoint &kpUn = mvKeysUn[vCell[j]];
+				// 保证给定的搜索金字塔层级范围合法
                 if(bCheckLevels)
                 {
                     if(kpUn.octave<minLevel)
@@ -544,7 +528,8 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
                 const float distx = kpUn.pt.x-x;
                 const float disty = kpUn.pt.y-y;
 
-                if(fabs(distx)<factorX && fabs(disty)<factorY)
+				// 如果x方向和y方向的距离都在指定的半径之内，存储其index为候选特征点
+                if(fabs(distx)<r && fabs(disty)<r)
                     vIndices.push_back(vCell[j]);
             }
         }
@@ -571,7 +556,10 @@ void Frame::ComputeBoW()
     if(mBowVec.empty())
     {
         vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
-        mpORBvocabulary->transform(vCurrentDesc,mBowVec,mFeatVec,4);
+        mpORBvocabulary->transform(vCurrentDesc,
+		mBowVec,
+		mFeatVec,
+		4);
     }
 }
 
@@ -594,7 +582,13 @@ void Frame::UndistortKeyPoints()
 
     // Undistort points
     mat=mat.reshape(2);
-    cv::undistortPoints(mat,mat, static_cast<Pinhole*>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
+    cv::undistortPoints(
+	mat,
+	mat, 
+	mK,
+	mDistCoef,
+	cv::Mat(),
+	mK);
     mat=mat.reshape(1);
 
 
@@ -615,13 +609,17 @@ void Frame::ComputeImageBounds(const cv::Mat &imLeft)
     if(mDistCoef.at<float>(0)!=0.0)
     {
         cv::Mat mat(4,2,CV_32F);
-        mat.at<float>(0,0)=0.0; mat.at<float>(0,1)=0.0;
-        mat.at<float>(1,0)=imLeft.cols; mat.at<float>(1,1)=0.0;
-        mat.at<float>(2,0)=0.0; mat.at<float>(2,1)=imLeft.rows;
-        mat.at<float>(3,0)=imLeft.cols; mat.at<float>(3,1)=imLeft.rows;
+        mat.at<float>(0,0)=0.0; 
+		mat.at<float>(0,1)=0.0;
+        mat.at<float>(1,0)=imLeft.cols; 
+		mat.at<float>(1,1)=0.0;
+        mat.at<float>(2,0)=0.0; 
+		mat.at<float>(2,1)=imLeft.rows;
+        mat.at<float>(3,0)=imLeft.cols; 
+		mat.at<float>(3,1)=imLeft.rows;
 
         mat=mat.reshape(2);
-        cv::undistortPoints(mat,mat,static_cast<Pinhole*>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
+        cv::undistortPoints(mat,mat,mK,mDistCoef,cv::Mat(),mK);
         mat=mat.reshape(1);
 
         // Undistort corners

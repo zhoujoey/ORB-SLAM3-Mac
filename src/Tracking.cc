@@ -827,18 +827,14 @@ void Tracking::Track()
             }
         }
 
-        if(!mCurrentFrame.mpReferenceKF)
-            mCurrentFrame.mpReferenceKF = mpReferenceKF;
+        // 将最新的关键帧作为当前帧的参考关键帧
+        mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
         // If we have an initial estimation of the camera pose and matching. Track the local map.
         if(!mbOnlyTracking)
         {
             if(bOK)
-            {
                 bOK = TrackLocalMap();
-            }
-            if(!bOK)
-                cout << "Fail to track local map!" << endl;
         }
         else
         {
@@ -1319,14 +1315,15 @@ bool Tracking::TrackReferenceKeyFrame()
     ORBmatcher matcher(0.7,true);
     vector<MapPoint*> vpMapPointMatches;
 
-    int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
+    int nmatches = matcher.SearchByBoW(
+	mpReferenceKF,
+	mCurrentFrame,
+	vpMapPointMatches);
 
     if(nmatches<15)
-    {
-        cout << "TRACK_REF_KF: Less than 15 matches!!\n";
         return false;
-    }
 
+    // Step 3:将上一帧的位姿态作为当前帧位姿的初始值
     mCurrentFrame.mvpMapPoints = vpMapPointMatches;
     mCurrentFrame.SetPose(mLastFrame.mTcw);
 
@@ -1596,8 +1593,9 @@ bool Tracking::TrackLocalMap()
                 mCurrentFrame.mvpMapPoints[i]->IncreaseFound();
                 if(!mbOnlyTracking)
                 {
-                    if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
-                        mnMatchesInliers++;
+                    // 如果该地图点被相机观测数目nObs大于0，匹配内点计数+1
+                    // nObs： 被观测到的相机数目，单目+1，双目或RGB-D则+2
+					mnMatchesInliers += (mCurrentFrame.mvpMapPoints[i]->Observations() > 0);
                 }
                 else
                     mnMatchesInliers++;
