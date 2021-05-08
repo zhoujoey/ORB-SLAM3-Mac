@@ -66,10 +66,10 @@ int main(int argc, char **argv)
     string imuFile = dataset + "/imu/data.csv";
     string configPath = (string)argv[2];
 //    string vocPath = configPath + "/orbvoc_9_5.bin";
-        string vocPath = configPath + "/ORBvoc.bin";
+    string vocPath = configPath + "/ORBvoc.bin";
     string strFile = dataset + "/camera/data.csv";
 
-    string yamlPath = configPath + "/eu.yaml";
+    string yamlPath = configPath + "/st.yaml";
     LoadImages(rgbpath, strFile, vstrImageFilenames, vTimestampsCam);
 
 

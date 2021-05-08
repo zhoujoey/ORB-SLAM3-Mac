@@ -69,7 +69,7 @@ int main(int argc, char **argv)
         string vocPath = configPath + "/ORBvoc.bin";
     string strFile = dataset + "/camera/data.csv";
 
-    string yamlPath = configPath + "/Mi8.yaml";
+    string yamlPath = configPath + "/Mi8_VI.yaml";
     LoadImages(rgbpath, strFile, vstrImageFilenames, vTimestampsCam);
 
 
