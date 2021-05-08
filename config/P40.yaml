@@ -1,0 +1,136 @@
+%YAML:1.0
+#--------------------------------------------------------------------------------------------
+# IMU Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+## For good initialization (no movement at the beginning for some bag)
+test.DiscardTime: 0
+# set running mode
+# 0: Monocular; 1: MonoVI;
+runningMode: 1
+
+# set whether deactive Loop Closure detection
+# 1: Deactive; 0: active
+deactiveLoopClosure: 0
+
+# set whether track LocalMap only with vision
+# 1: only with vision without IMU; 0: else
+onlyTrackLocalMap: 0
+
+# set whether display the time-consuming of different section.
+# 1: Display; 0: Not display
+dispalyTimeStatistic: 0
+
+# Set whether the TrackWithMotionModel() and TrackLocalMap() aid the tracking process
+# when the TrackWithIMU() and TrackLocalMapWithIMU() fail
+# 1: aid; 0: not aid
+visionAidWhenTrackWithIMUFail: 0
+
+# Wait local mapping end.
+# Do not process next frame until local mapping is idle. (This can noly be used in read rosbag)
+# Due to this waitting, the system is slow.
+waitUntilLocalMapIdle: 0
+
+# estimate Extrinsic between camera and IMU
+# 1: estimate; 0: not estimate (use pre-calibration parameters)
+estimateExtrinsicBetweenCameraAndIMU: 1
+
+# create random matrix (Rbcstar_last) for the first VIO initialization
+# 1: create random matrix; 0: use Identity matrix
+CreateRandomMatrixLastForFirstVIOInit: 0
+
+# Timestamp shift. Timage = Timu + image_delay
+Camera.delaytoimu: 0
+
+# acc = acc*9.8, if below is 1
+IMU.multiplyG: 0
+
+# camera-imu frame transformation, Pi = Tic * Pc
+Camera.Tbc:
+  [0, -1, 0, -0.00165,
+   -1, 0, 0, -0.00995,
+   0, 0, -1, 0.00067,
+   0.0, 0.0, 0.0, 1.0]
+#    [1, 0, 0, 0,
+#     0, 1, 0, 0,
+#     0, 0, 1, 0,
+#     0.0, 0.0, 0.0, 1.0]
+
+# Local Window size
+LocalMapping.LocalWindowSize: 5
+
+# imu sample rate per second
+IMU.rate: 200
+
+# inertial sensor noise model parameters (static)
+# gyro "white noise" [ rad / s / sqrt(Hz) ]
+IMU.sigma_g: 0.0025
+
+# gyro bias diffusion [ rad / s^2 / sqrt(Hz) ]
+IMU.sigma_gw: 8e-04
+
+# accel "white noise" [ m / s^2 / sqrt(Hz) ]
+IMU.sigma_a: 0.025
+
+# accel bias diffusion [ m / s^3 / sqrt(Hz) ].
+IMU.sigma_aw: 0.02
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+
+# Camera calibration and distortion parameters (OpenCV)
+
+Camera.fx: 435.037
+Camera.fy: 436.501
+Camera.cx: 326.624
+Camera.cy: 180.845
+
+#   525.133545, 525.346680, 320.000000, 180.000000
+
+Camera.k1: 0
+Camera.k2: 0
+Camera.p1: 0
+Camera.p2: 0
+Camera.k3: 0
+
+# Camera frames per second 
+Camera.fps: 30.0
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 1000
+
+# ORB Extractor: Scale factor between levels in the scale pyramid 	
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid	
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast			
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize:2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
+
+
+
