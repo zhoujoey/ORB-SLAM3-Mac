@@ -76,9 +76,6 @@ public:
     // The focal lenght should be similar or scale prediction will fail when projecting points
     void ChangeCalibration(const string &strSettingPath);
 
-    // Use this function if you have deactivated local mapping and you only want to localize the camera.
-    void InformOnlyTracking(const bool &flag);
-
     void UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame);
     KeyFrame* GetLastKeyFrame()
     {
@@ -135,8 +132,6 @@ public:
     int mTrackedFr;
     bool mbStep;
 
-    // True if local mapping is deactivated and we are performing only localization
-    bool mbOnlyTracking;
 
     void Reset(bool bLocMap = false);
     void ResetActiveMap(bool bLocMap = false);

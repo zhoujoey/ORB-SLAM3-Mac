@@ -165,12 +165,10 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const
                 usleep(1000);
             }
 
-            mpTracker->InformOnlyTracking(true);
             mbActivateLocalizationMode = false;
         }
         if(mbDeactivateLocalizationMode)
         {
-            mpTracker->InformOnlyTracking(false);
             mpLocalMapper->Release();
             mbDeactivateLocalizationMode = false;
         }

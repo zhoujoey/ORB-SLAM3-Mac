@@ -57,7 +57,6 @@ const string &_nameSeq):
 	mSensor(sensor), 
 	mTrackedFr(0), 
 	mbStep(false),
-    mbOnlyTracking(false), 
 	mbMapUpdated(false), 
 	mbVO(false), 
 	mpORBVocabulary(pVoc), 
@@ -653,197 +652,113 @@ void Tracking::Track()
         // System is initialized. Track Frame.
         bool bOK;
 
-        // Initial camera pose estimation using motion model or relocalization (if tracking is lost)
-        if(!mbOnlyTracking)
+        // State OK
+        // Local Mapping is activated. This is the normal behaviour, unless
+        // you explicitly activate the "only tracking" mode.
+        if(mState==OK)
         {
-            // State OK
-            // Local Mapping is activated. This is the normal behaviour, unless
-            // you explicitly activate the "only tracking" mode.
-            if(mState==OK)
+
+            // Local Mapping might have changed some MapPoints tracked in last frame
+            CheckReplacedInLastFrame();
+
+            if((mVelocity.empty() && !pCurrentMap->isImuInitialized()) || mCurrentFrame.mnId<mnLastRelocFrameId+2)
             {
-
-                // Local Mapping might have changed some MapPoints tracked in last frame
-                CheckReplacedInLastFrame();
-
-                if((mVelocity.empty() && !pCurrentMap->isImuInitialized()) || mCurrentFrame.mnId<mnLastRelocFrameId+2)
-                {
-                    //Verbose::PrintMess("TRACK: Track with respect to the reference KF ", Verbose::VERBOSITY_DEBUG);
-                    bOK = TrackReferenceKeyFrame();
-                }
-                else
-                {
-                    //Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
-                    bOK = TrackWithMotionModel();
-                    if(!bOK)
-                        bOK = TrackReferenceKeyFrame();
-                }
-
-
-                if (!bOK)
-                {
-                    if ( mCurrentFrame.mnId<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
-                         (mSensor==System::IMU_MONOCULAR ))
-                    {
-                        mState = LOST;
-                    }
-                    else if(pCurrentMap->KeyFramesInMap()>10)
-                    {
-                        cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << endl;
-                        mState = RECENTLY_LOST;
-                        mTimeStampLost = mCurrentFrame.mTimeStamp;
-                        //mCurrentFrame.SetPose(mLastFrame.mTcw);
-                    }
-                    else
-                    {
-                        mState = LOST;
-                    }
-                }
+                //Verbose::PrintMess("TRACK: Track with respect to the reference KF ", Verbose::VERBOSITY_DEBUG);
+                bOK = TrackReferenceKeyFrame();
             }
             else
             {
-
-                if (mState == RECENTLY_LOST)
-                {
-                    Verbose::PrintMess("Lost for a short time", Verbose::VERBOSITY_NORMAL);
-
-                    bOK = true;
-                    if((mSensor == System::IMU_MONOCULAR ))
-                    {
-                        if(pCurrentMap->isImuInitialized())
-                            PredictStateIMU();
-                        else
-                            bOK = false;
-
-                        if (mCurrentFrame.mTimeStamp-mTimeStampLost>time_recently_lost)
-                        {
-                            mState = LOST;
-                            Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
-                            bOK=false;
-                        }
-                    }
-                    else
-                    {
-                        // TODO fix relocalization
-                        bOK = Relocalization();
-                        if(!bOK)
-                        {
-                            mState = LOST;
-                            Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
-                            bOK=false;
-                        }
-                    }
-                }
-                else if (mState == LOST)
-                {
-
-                    Verbose::PrintMess("A new map is started...", Verbose::VERBOSITY_NORMAL);
-
-                    if (pCurrentMap->KeyFramesInMap()<10)
-                    {
-                        mpSystem->ResetActiveMap();
-                        cout << "Reseting current map..." << endl;
-                    }else
-                        CreateMapInAtlas();
-
-                    if(mpLastKeyFrame)
-                        mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
-
-                    Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
-
-                    return;
-                }
+                //Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
+                bOK = TrackWithMotionModel();
+                if(!bOK)
+                    bOK = TrackReferenceKeyFrame();
             }
 
+
+            if (!bOK)
+            {
+                if ( mCurrentFrame.mnId<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
+                        (mSensor==System::IMU_MONOCULAR ))
+                {
+                    mState = LOST;
+                }
+                else if(pCurrentMap->KeyFramesInMap()>10)
+                {
+                    cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << endl;
+                    mState = RECENTLY_LOST;
+                    mTimeStampLost = mCurrentFrame.mTimeStamp;
+                    //mCurrentFrame.SetPose(mLastFrame.mTcw);
+                }
+                else
+                {
+                    mState = LOST;
+                }
+            }
         }
         else
         {
-            // Localization Mode: Local Mapping is deactivated (TODO Not available in inertial mode)
-            if(mState==LOST)
+
+            if (mState == RECENTLY_LOST)
             {
-                if(mSensor == System::IMU_MONOCULAR )
-                    Verbose::PrintMess("IMU. State LOST", Verbose::VERBOSITY_NORMAL);
-                bOK = Relocalization();
-            }
-            else
-            {
-                if(!mbVO)
+                Verbose::PrintMess("Lost for a short time", Verbose::VERBOSITY_NORMAL);
+
+                bOK = true;
+                if((mSensor == System::IMU_MONOCULAR ))
                 {
-                    // In last frame we tracked enough MapPoints in the map
-                    if(!mVelocity.empty())
-                    {
-                        bOK = TrackWithMotionModel();
-                    }
+                    if(pCurrentMap->isImuInitialized())
+                        PredictStateIMU();
                     else
+                        bOK = false;
+
+                    if (mCurrentFrame.mTimeStamp-mTimeStampLost>time_recently_lost)
                     {
-                        bOK = TrackReferenceKeyFrame();
+                        mState = LOST;
+                        Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
+                        bOK=false;
                     }
                 }
                 else
                 {
-                    // In last frame we tracked mainly "visual odometry" points.
-
-                    // We compute two camera poses, one from motion model and one doing relocalization.
-                    // If relocalization is sucessfull we choose that solution, otherwise we retain
-                    // the "visual odometry" solution.
-
-                    bool bOKMM = false;
-                    bool bOKReloc = false;
-                    vector<MapPoint*> vpMPsMM;
-                    vector<bool> vbOutMM;
-                    cv::Mat TcwMM;
-                    if(!mVelocity.empty())
+                    // TODO fix relocalization
+                    bOK = Relocalization();
+                    if(!bOK)
                     {
-                        bOKMM = TrackWithMotionModel();
-                        vpMPsMM = mCurrentFrame.mvpMapPoints;
-                        vbOutMM = mCurrentFrame.mvbOutlier;
-                        TcwMM = mCurrentFrame.mTcw.clone();
+                        mState = LOST;
+                        Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
+                        bOK=false;
                     }
-                    bOKReloc = Relocalization();
-
-                    if(bOKMM && !bOKReloc)
-                    {
-                        mCurrentFrame.SetPose(TcwMM);
-                        mCurrentFrame.mvpMapPoints = vpMPsMM;
-                        mCurrentFrame.mvbOutlier = vbOutMM;
-
-                        if(mbVO)
-                        {
-                            for(int i =0; i<mCurrentFrame.N; i++)
-                            {
-                                if(mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i])
-                                {
-                                    mCurrentFrame.mvpMapPoints[i]->IncreaseFound();
-                                }
-                            }
-                        }
-                    }
-                    else if(bOKReloc)
-                    {
-                        mbVO = false;
-                    }
-
-                    bOK = bOKReloc || bOKMM;
                 }
             }
+            else if (mState == LOST)
+            {
+
+                Verbose::PrintMess("A new map is started...", Verbose::VERBOSITY_NORMAL);
+
+                if (pCurrentMap->KeyFramesInMap()<10)
+                {
+                    mpSystem->ResetActiveMap();
+                    cout << "Reseting current map..." << endl;
+                }else
+                    CreateMapInAtlas();
+
+                if(mpLastKeyFrame)
+                    mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
+
+                Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
+
+                return;
+            }
         }
+
+        
 
         // 将最新的关键帧作为当前帧的参考关键帧
         mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
         // If we have an initial estimation of the camera pose and matching. Track the local map.
-        if(!mbOnlyTracking)
-        {
-            if(bOK)
-                bOK = TrackLocalMap();
-        }
-        else
-        {
-            // mbVO true means that there are few matches to MapPoints in the map. We cannot retrieve
-            // a local map and therefore we do not perform TrackLocalMap(). Once the system relocalizes
-            // the camera we will use the local map again.
-            if(bOK && !mbVO)
-                bOK = TrackLocalMap();
-        }
+        if(bOK)
+            bOK = TrackLocalMap();
+
 
         if(bOK)
             mState = OK;
@@ -1375,7 +1290,7 @@ void Tracking::UpdateLastFrame()
     cv::Mat Tlr = mlRelativeFramePoses.back();
     mLastFrame.SetPose(Tlr*pRef->GetPose());
 
-    if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR || !mbOnlyTracking)
+    if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR )
         return;
 
     // Create "visual odometry" MapPoints
@@ -1514,12 +1429,6 @@ bool Tracking::TrackWithMotionModel()
         }
     }
 
-    if(mbOnlyTracking)
-    {
-        mbVO = nmatchesMap<10;
-        return nmatches>20;
-    }
-
     if (mSensor == System::IMU_MONOCULAR )
         return true;
     else
@@ -1591,14 +1500,10 @@ bool Tracking::TrackLocalMap()
             if(!mCurrentFrame.mvbOutlier[i])
             {
                 mCurrentFrame.mvpMapPoints[i]->IncreaseFound();
-                if(!mbOnlyTracking)
-                {
-                    // 如果该地图点被相机观测数目nObs大于0，匹配内点计数+1
-                    // nObs： 被观测到的相机数目，单目+1，双目或RGB-D则+2
-					mnMatchesInliers += (mCurrentFrame.mvpMapPoints[i]->Observations() > 0);
-                }
-                else
-                    mnMatchesInliers++;
+                // 如果该地图点被相机观测数目nObs大于0，匹配内点计数+1
+                // nObs： 被观测到的相机数目，单目+1，双目或RGB-D则+2
+                mnMatchesInliers += (mCurrentFrame.mvpMapPoints[i]->Observations() > 0);
+
             }
         }
     }
@@ -1640,9 +1545,6 @@ bool Tracking::NeedNewKeyFrame()
         else
             return false;
     }
-
-    if(mbOnlyTracking)
-        return false;
 
     // If Local Mapping is freezed by a Loop Closure do not insert keyframes
     if(mpLocalMapper->isStopped() || mpLocalMapper->stopRequested())
@@ -2526,10 +2428,6 @@ void Tracking::ChangeCalibration(const string &strSettingPath)
     Frame::mbInitialComputations = true;
 }
 
-void Tracking::InformOnlyTracking(const bool &flag)
-{
-    mbOnlyTracking = flag;
-}
 
 void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame)
 {

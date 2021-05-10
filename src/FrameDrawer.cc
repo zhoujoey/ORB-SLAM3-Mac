@@ -371,10 +371,7 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
         s << " TRYING TO INITIALIZE ";
     else if(nState==Tracking::OK)
     {
-        if(!mbOnlyTracking)
-            s << "SLAM MODE |  ";
-        else
-            s << "LOCALIZATION | ";
+        s << "SLAM MODE |  ";
         int nMaps = mpAtlas->CountMaps();
         int nKFs = mpAtlas->KeyFramesInMap();
         int nMPs = mpAtlas->MapPointsInMap();
@@ -420,7 +417,6 @@ void FrameDrawer::Update(Tracking *pTracker)
     // cout << "Number of matches in frame: " << N << endl;
     mvbVO = vector<bool>(N,false);
     mvbMap = vector<bool>(N,false);
-    mbOnlyTracking = pTracker->mbOnlyTracking;
 
     //Variables for the new visualization
     mCurrentFrame = pTracker->mCurrentFrame;
