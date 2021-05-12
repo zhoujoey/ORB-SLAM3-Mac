@@ -1194,14 +1194,15 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     mInitTime = mpTracker->mLastFrame.mTimeStamp-vpKF.front()->mTimeStamp;
 
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
+    //联初始化核心函数，IMU参数与尺度联合优化
     Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, infoInertial, false, false, priorG, priorA);
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-    /*cout << "scale after inertial-only optimization: " << mScale << endl;
-    cout << "bg after inertial-only optimization: " << mbg << endl;
-    cout << "ba after inertial-only optimization: " << mba << endl;*/
-
-
+//    cout << "scale after inertial-only optimization: " << mScale << endl;
+//    cout << "bg after inertial-only optimization: " << mbg << endl;
+//    cout << "ba after inertial-only optimization: " << mba << endl;
+    cout<<"init IMU ++++++++++++++"<<endl;
+    cout<<mScale<<endl;
     if (mScale<1e-1)
     {
         cout << "scale too small" << endl;

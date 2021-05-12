@@ -801,13 +801,13 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<KeyFrame*> &vpBowCand, 
                                     cv::Vec3d vector_dist =  Tc_cj.rowRange(0, 3).col(3);
                                     cv::Mat Rc_cj = Tc_cj.rowRange(0, 3).colRange(0, 3);
                                     double dist = cv::norm(vector_dist);
-                                    cout << "BoW: KF " << pKFi->mnId << " to KF " << pKFj->mnId << " is separated by " << dist << " meters" << endl;
-                                    cout << "BoW: Rotation between KF -> " << Rc_cj << endl;
+                                    //cout << "BoW: KF " << pKFi->mnId << " to KF " << pKFj->mnId << " is separated by " << dist << " meters" << endl;
+                                    //cout << "BoW: Rotation between KF -> " << Rc_cj << endl;
                                     vector<float> v_euler = Converter::toEuler(Rc_cj);
                                     v_euler[0] *= 180 /3.1415;
                                     v_euler[1] *= 180 /3.1415;
                                     v_euler[2] *= 180 /3.1415;
-                                    cout << "BoW: Rotation in angles (x, y, z) -> (" << v_euler[0] << ", " << v_euler[1] << ", " << v_euler[2] << ")" << endl;
+                                    //cout << "BoW: Rotation in angles (x, y, z) -> (" << v_euler[0] << ", " << v_euler[1] << ", " << v_euler[2] << ")" << endl;
                                     nNumKFs++;
                                     /*if(numProjMatches_j > numProjOptMatches)
                                     {

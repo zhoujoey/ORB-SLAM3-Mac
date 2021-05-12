@@ -229,7 +229,6 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
         {
-            cout << "init extractor" << endl;
             mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
         }
         else
@@ -370,7 +369,7 @@ void Tracking::PreintegrateIMU()
 
     if(!mpLastKeyFrame)
     {
-        cout << "last KF is empty!" << endl;
+        //cout << "last KF is empty!" << endl;
     }
     mCurrentFrame.setIntegrated();
 
@@ -1261,12 +1260,6 @@ bool Tracking::TrackReferenceKeyFrame()
 
                 mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
                 mCurrentFrame.mvbOutlier[i]=false;
-                if(i < mCurrentFrame.Nleft){
-                    pMP->mbTrackInView = false;
-                }
-                else{
-                    pMP->mbTrackInViewR = false;
-                }
                 pMP->mbTrackInView = false;
                 pMP->mnLastFrameSeen = mCurrentFrame.mnId;
                 nmatches--;
@@ -1415,12 +1408,7 @@ bool Tracking::TrackWithMotionModel()
 
                 mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
                 mCurrentFrame.mvbOutlier[i]=false;
-                if(i < mCurrentFrame.Nleft){
-                    pMP->mbTrackInView = false;
-                }
-                else{
-                    pMP->mbTrackInViewR = false;
-                }
+                pMP->mbTrackInView = false;
                 pMP->mnLastFrameSeen = mCurrentFrame.mnId;
                 nmatches--;
             }
@@ -1456,6 +1444,7 @@ bool Tracking::TrackLocalMap()
         }
 
     int inliers;
+    //测试
     if (!mpAtlas->isImuInitialized())
         Optimizer::PoseOptimization(&mCurrentFrame);
     else
@@ -1518,22 +1507,8 @@ bool Tracking::TrackLocalMap()
         return true;
 
 
-    if (mSensor == System::IMU_MONOCULAR)
-    {
-        if(mnMatchesInliers<15)
-        {
-            return false;
-        }
-        else
-            return true;
-    }
-    else
-    {
-        if(mnMatchesInliers<30)
-            return false;
-        else
-            return true;
-    }
+	return mnMatchesInliers>= (mSensor == System::IMU_MONOCULAR) ? 15:30;
+
 }
 
 bool Tracking::NeedNewKeyFrame()
