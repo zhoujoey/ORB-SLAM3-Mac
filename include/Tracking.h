@@ -62,7 +62,7 @@ public:
 
     ~Tracking();
 
-    cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
+    cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
     // cv::Mat GrabImageImuMonocular(const cv::Mat &im, const double &timestamp);
 
     void GrabImuData(const IMU::Point &imuMeasurement);

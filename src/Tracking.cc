@@ -199,7 +199,7 @@ void Tracking::SetStepByStep(bool bSet)
 
 
 
-cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename)
+cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 {
     mImGray = im;
 
@@ -240,7 +240,7 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
 
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 
-    mCurrentFrame.mNameFile = filename;
+
     mCurrentFrame.mnDataset = mnNumDataset;
 
     lastID = mCurrentFrame.mnId;

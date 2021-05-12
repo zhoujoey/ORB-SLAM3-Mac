@@ -144,7 +144,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
 }
 
-cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas)
 {
     if(mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR)
     {
@@ -195,7 +195,7 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const
         for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
-    cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp,filename);
+    cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp);
 
 
     unique_lock<mutex> lock2(mMutexState);

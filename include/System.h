@@ -82,7 +82,7 @@ public:
     // Input sensor
     enum eSensor{
         MONOCULAR=0,
-        IMU_MONOCULAR=3,
+        IMU_MONOCULAR=3
     };
 
     // File type
@@ -94,13 +94,19 @@ public:
 public:
 
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
-    System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true, const int initFr = 0, const string &strSequence = std::string(), const string &strLoadingFile = std::string());
+    System(const string &strVocFile, 
+	const string &strSettingsFile, 
+	const eSensor sensor, 
+	const bool bUseViewer = true, 
+	const int initFr = 0, 
+	const string &strSequence = std::string(), 
+	const string &strLoadingFile = std::string());
 
 
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas = vector<IMU::Point>(), string filename="");
+    cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas = vector<IMU::Point>());
 
 
     // This stops local mapping thread (map building) and performs only camera tracking.

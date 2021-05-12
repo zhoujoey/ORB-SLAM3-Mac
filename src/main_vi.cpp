@@ -126,10 +126,7 @@ int main(int argc, char **argv)
 
     while(vTimestampsImu[first_imu]<=vTimestampsCam[0])
     {
-        cout<<vTimestampsImu[first_imu]<<endl;
-        cout<<vTimestampsCam[0]<<endl;
         first_imu++;
-        cout<<first_imu<<endl;
     }
     first_imu--;
 
