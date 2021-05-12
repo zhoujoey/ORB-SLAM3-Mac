@@ -79,8 +79,6 @@ void LoopClosing::Run()
                     }
                     else
                     {
-                        Verbose::PrintMess("*Merged detected", Verbose::VERBOSITY_QUIET);
-                        Verbose::PrintMess("Number of KFs in the current map: " + to_string(mpCurrentKF->GetMap()->KeyFramesInMap()), Verbose::VERBOSITY_DEBUG);
                         cv::Mat mTmw = mpMergeMatchedKF->GetPose();
                         g2o::Sim3 gSmw2(Converter::toMatrix3d(mTmw.rowRange(0, 3).colRange(0, 3)),Converter::toVector3d(mTmw.rowRange(0, 3).col(3)),1.0);
                         cv::Mat mTcw = mpCurrentKF->GetPose();
@@ -100,7 +98,6 @@ void LoopClosing::Run()
                                 mvpMergeMPs.clear();
                                 mnMergeNumNotFound = 0;
                                 mbMergeDetected = false;
-                                Verbose::PrintMess("scale bad estimated. Abort merging", Verbose::VERBOSITY_NORMAL);
                                 continue;
                             }
                             // If inertial, force only yaw
@@ -163,9 +160,6 @@ void LoopClosing::Run()
                     vdPR_CurrentTime.push_back(mpCurrentKF->mTimeStamp);
                     vdPR_MatchedTime.push_back(mpLoopMatchedKF->mTimeStamp);
                     vnPR_TypeRecogn.push_back(0);
-
-
-                    Verbose::PrintMess("*Loop detected", Verbose::VERBOSITY_QUIET);
 
                     mg2oLoopScw = mg2oLoopSlw; //*mvg2oSim3LoopTcw[nCurrentIndex];
                     if(mpCurrentKF->GetMap()->IsInertial())
@@ -1229,7 +1223,6 @@ void LoopClosing::CorrectLoop()
 
 void LoopClosing::MergeLocal()
 {
-    Verbose::PrintMess("MERGE-VISUAL: Merge Visual detected!!!!", Verbose::VERBOSITY_NORMAL);
     //mpTracker->SetStepByStep(true);
 
     int numTemporalKFs = 15; //TODO (set by parameter): Temporal KFs in the local window if the map is inertial.
@@ -1244,7 +1237,6 @@ void LoopClosing::MergeLocal()
     // Flag that is true only when we stopped a running BA, in this case we need relaunch at the end of the merge
     bool bRelaunchBA = false;
 
-    Verbose::PrintMess("MERGE-VISUAL: Check Full Bundle Adjustment", Verbose::VERBOSITY_DEBUG);
     // If a Global Bundle Adjustment is running, abort it
     if(isRunningGBA())
     {
@@ -1261,14 +1253,12 @@ void LoopClosing::MergeLocal()
         bRelaunchBA = true;
     }
 
-    Verbose::PrintMess("MERGE-VISUAL: Request Stop Local Mapping", Verbose::VERBOSITY_DEBUG);
     mpLocalMapper->RequestStop();
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
     {
         usleep(1000);
     }
-    Verbose::PrintMess("MERGE-VISUAL: Local Map stopped", Verbose::VERBOSITY_DEBUG);
 
     mpLocalMapper->EmptyQueue();
 
@@ -1276,12 +1266,6 @@ void LoopClosing::MergeLocal()
     // Later, the elements of the current map will be transform to the new active map reference, in order to keep real time tracking
     Map* pCurrentMap = mpCurrentKF->GetMap();
     Map* pMergeMap = mpMergeMatchedKF->GetMap();
-
-    Verbose::PrintMess("MERGE-VISUAL: Initially there are " + to_string(pCurrentMap->KeyFramesInMap()) + " KFs and " + to_string(pCurrentMap->MapPointsInMap()) + " MPs in the active map ", Verbose::VERBOSITY_DEBUG);
-    Verbose::PrintMess("MERGE-VISUAL: Initially there are " + to_string(pMergeMap->KeyFramesInMap()) + " KFs and " + to_string(pMergeMap->MapPointsInMap()) + " MPs in the matched map ", Verbose::VERBOSITY_DEBUG);
-    //vector<KeyFrame*> vpMergeKFs = pMergeMap->GetAllKeyFrames();
-
-    ////
 
     // Ensure current keyframe is updated
     mpCurrentKF->UpdateConnections();
@@ -1320,7 +1304,7 @@ void LoopClosing::MergeLocal()
 
     vector<KeyFrame*> vpCovisibleKFs = mpCurrentKF->GetBestCovisibilityKeyFrames(numTemporalKFs);
     spLocalWindowKFs.insert(vpCovisibleKFs.begin(), vpCovisibleKFs.end());
-    Verbose::PrintMess("MERGE-VISUAL: Initial number of KFs in local window from active map: " + to_string(spLocalWindowKFs.size()), Verbose::VERBOSITY_DEBUG);
+
     const int nMaxTries = 3;
     int nNumTries = 0;
     while(spLocalWindowKFs.size() < numTemporalKFs && nNumTries < nMaxTries)
@@ -1343,11 +1327,7 @@ void LoopClosing::MergeLocal()
         spLocalWindowKFs.insert(vpNewCovKFs.begin(), vpNewCovKFs.end());
         nNumTries++;
     }
-    Verbose::PrintMess("MERGE-VISUAL: Last number of KFs in local window from the active map: " + to_string(spLocalWindowKFs.size()), Verbose::VERBOSITY_DEBUG);
 
-    //TODO TEST
-    //vector<KeyFrame*> vpTestKFs = pCurrentMap->GetAllKeyFrames();
-    //spLocalWindowKFs.insert(vpTestKFs.begin(), vpTestKFs.end());
 
     for(KeyFrame* pKFi : spLocalWindowKFs)
     {
@@ -1357,10 +1337,7 @@ void LoopClosing::MergeLocal()
         set<MapPoint*> spMPs = pKFi->GetMapPoints();
         spLocalWindowMPs.insert(spMPs.begin(), spMPs.end());
     }
-    Verbose::PrintMess("MERGE-VISUAL: Number of MPs in local window from active map: " + to_string(spLocalWindowMPs.size()), Verbose::VERBOSITY_DEBUG);
-    Verbose::PrintMess("MERGE-VISUAL: Number of MPs in the active map: " + to_string(pCurrentMap->GetAllMapPoints().size()), Verbose::VERBOSITY_DEBUG);
 
-    Verbose::PrintMess("-------", Verbose::VERBOSITY_DEBUG);
     set<KeyFrame*> spMergeConnectedKFs;
     if(pCurrentMap->IsInertial() && pMergeMap->IsInertial()) //TODO Check the correct initialization
     {
@@ -1385,7 +1362,6 @@ void LoopClosing::MergeLocal()
     }
     vpCovisibleKFs = mpMergeMatchedKF->GetBestCovisibilityKeyFrames(numTemporalKFs);
     spMergeConnectedKFs.insert(vpCovisibleKFs.begin(), vpCovisibleKFs.end());
-    Verbose::PrintMess("MERGE-VISUAL: Initial number of KFs in the local window from matched map: " + to_string(spMergeConnectedKFs.size()), Verbose::VERBOSITY_DEBUG);
     nNumTries = 0;
     while(spMergeConnectedKFs.size() < numTemporalKFs && nNumTries < nMaxTries)
     {
@@ -1406,7 +1382,6 @@ void LoopClosing::MergeLocal()
         spMergeConnectedKFs.insert(vpNewCovKFs.begin(), vpNewCovKFs.end());
         nNumTries++;
     }
-    Verbose::PrintMess("MERGE-VISUAL: Last number of KFs in the localwindow from matched map: " + to_string(spMergeConnectedKFs.size()), Verbose::VERBOSITY_DEBUG);
 
     set<MapPoint*> spMapPointMerge;
     for(KeyFrame* pKFi : spMergeConnectedKFs)
@@ -1443,12 +1418,9 @@ void LoopClosing::MergeLocal()
     {
         if(!pKFi || pKFi->isBad())
         {
-            Verbose::PrintMess("Bad KF in correction", Verbose::VERBOSITY_DEBUG);
             continue;
         }
 
-        if(pKFi->GetMap() != pCurrentMap)
-            Verbose::PrintMess("Other map KF, this should't happen", Verbose::VERBOSITY_DEBUG);
 
         g2o::Sim3 g2oCorrectedSiw;
 
@@ -1544,7 +1516,6 @@ void LoopClosing::MergeLocal()
     std::chrono::monotonic_clock::time_point timeFinishTransfMerge = std::chrono::monotonic_clock::now();
 #endif
     std::chrono::duration<double,std::milli> timeTransfMerge = timeFinishTransfMerge - timeStartTransfMerge; // Time in milliseconds
-    Verbose::PrintMess("MERGE-VISUAL: TRANSF ms: " + to_string(timeTransfMerge.count()), Verbose::VERBOSITY_DEBUG);
 
 
     //TODO Time test
@@ -1607,9 +1578,6 @@ void LoopClosing::MergeLocal()
     std::chrono::monotonic_clock::time_point timeFinishCritMerge = std::chrono::monotonic_clock::now();
 #endif
     std::chrono::duration<double,std::milli> timeCritMerge = timeFinishCritMerge - timeStartCritMerge; // Time in milliseconds
-    Verbose::PrintMess("MERGE-VISUAL: New current map: " + to_string(pMergeMap->GetId()), Verbose::VERBOSITY_DEBUG);
-    Verbose::PrintMess("MERGE-VISUAL: CRITICAL ms: " + to_string(timeCritMerge.count()), Verbose::VERBOSITY_DEBUG);
-    Verbose::PrintMess("MERGE-VISUAL: LOCAL MAPPING number of KFs: " + to_string(mpLocalMapper->KeyframesInQueue()), Verbose::VERBOSITY_DEBUG);
 
     //Rebuild the essential graph in the local window
     pCurrentMap->GetOriginKF()->SetFirstConnection(false);
@@ -1659,10 +1627,8 @@ void LoopClosing::MergeLocal()
     std::chrono::monotonic_clock::time_point timeFinishFuseMerge = std::chrono::monotonic_clock::now();
 #endif
     std::chrono::duration<double,std::milli> timeFuseMerge = timeFinishFuseMerge - timeStartFuseMerge; // Time in milliseconds
-    Verbose::PrintMess("MERGE-VISUAL: FUSE DUPLICATED ms: " + to_string(timeFuseMerge.count()), Verbose::VERBOSITY_DEBUG);
 
     // Update connectivity
-    Verbose::PrintMess("MERGE-VISUAL: Init to update connections in the welding area", Verbose::VERBOSITY_DEBUG);
     for(KeyFrame* pKFi : spLocalWindowKFs)
     {
         if(!pKFi || pKFi->isBad())
@@ -1680,33 +1646,23 @@ void LoopClosing::MergeLocal()
 
     //CheckObservations(spLocalWindowKFs, spMergeConnectedKFs);
 
-    Verbose::PrintMess("MERGE-VISUAL: Finish to update connections in the welding area", Verbose::VERBOSITY_DEBUG);
-
     bool bStop = false;
-    Verbose::PrintMess("MERGE-VISUAL: Start local BA ", Verbose::VERBOSITY_DEBUG);
+
     vpLocalCurrentWindowKFs.clear();
     vpMergeConnectedKFs.clear();
     std::copy(spLocalWindowKFs.begin(), spLocalWindowKFs.end(), std::back_inserter(vpLocalCurrentWindowKFs));
     std::copy(spMergeConnectedKFs.begin(), spMergeConnectedKFs.end(), std::back_inserter(vpMergeConnectedKFs));
     if (mpTracker->mSensor==System::IMU_MONOCULAR)
     {
-        Verbose::PrintMess("MERGE-VISUAL: Visual-Inertial", Verbose::VERBOSITY_DEBUG);
         Optimizer::MergeInertialBA(mpLocalMapper->GetCurrKF(),mpMergeMatchedKF,&bStop, mpCurrentKF->GetMap(),vCorrectedSim3);
     }
     else
     {
-        Verbose::PrintMess("MERGE-VISUAL: Visual", Verbose::VERBOSITY_DEBUG);
-        Verbose::PrintMess("MERGE-VISUAL: Local current window->" + to_string(vpLocalCurrentWindowKFs.size()) + "; Local merge window->" + to_string(vpMergeConnectedKFs.size()), Verbose::VERBOSITY_DEBUG);
         Optimizer::LocalBundleAdjustment(mpCurrentKF, vpLocalCurrentWindowKFs, vpMergeConnectedKFs,&bStop);
     }
 
     // Loop closed. Release Local Mapping.
     mpLocalMapper->Release();
-
-
-    //return;
-    Verbose::PrintMess("MERGE-VISUAL: Finish the LBA", Verbose::VERBOSITY_DEBUG);
-
 
     ////
     //Update the non critical area from the current map to the merged map
@@ -1715,11 +1671,9 @@ void LoopClosing::MergeLocal()
 
     if(vpCurrentMapKFs.size() == 0)
     {
-        Verbose::PrintMess("MERGE-VISUAL: There are not KFs outside of the welding area", Verbose::VERBOSITY_DEBUG);
     }
     else
     {
-        Verbose::PrintMess("MERGE-VISUAL: Calculate the new position of the elements outside of the window", Verbose::VERBOSITY_DEBUG);
         //Apply the transformation
         {
             if(mpTracker->mSensor == System::MONOCULAR)
@@ -1792,7 +1746,6 @@ void LoopClosing::MergeLocal()
                 }
             }
         }
-        Verbose::PrintMess("MERGE-VISUAL: Apply transformation to all elements of the old map", Verbose::VERBOSITY_DEBUG);
 
         mpLocalMapper->RequestStop();
         // Wait until Local Mapping has effectively stopped
@@ -1800,7 +1753,6 @@ void LoopClosing::MergeLocal()
         {
             usleep(1000);
         }
-        Verbose::PrintMess("MERGE-VISUAL: Local Map stopped", Verbose::VERBOSITY_DEBUG);
 
         // Optimize graph (and update the loop position for each element form the begining to the end)
         if(mpTracker->mSensor != System::MONOCULAR)
@@ -1814,9 +1766,6 @@ void LoopClosing::MergeLocal()
             unique_lock<mutex> currentLock(pCurrentMap->mMutexMapUpdate); // We update the current map with the Merge information
             unique_lock<mutex> mergeLock(pMergeMap->mMutexMapUpdate); // We remove the Kfs and MPs in the merged area from the old map
 
-            Verbose::PrintMess("MERGE-VISUAL: There are " + to_string(pMergeMap->KeyFramesInMap()) + " KFs in the map", Verbose::VERBOSITY_DEBUG);
-            Verbose::PrintMess("MERGE-VISUAL: It will be inserted " + to_string(vpCurrentMapKFs.size()) + " KFs in the map", Verbose::VERBOSITY_DEBUG);
-
             for(KeyFrame* pKFi : vpCurrentMapKFs)
             {
                 if(!pKFi || pKFi->isBad() || pKFi->GetMap() != pCurrentMap)
@@ -1829,8 +1778,6 @@ void LoopClosing::MergeLocal()
                 pMergeMap->AddKeyFrame(pKFi);
                 pCurrentMap->EraseKeyFrame(pKFi);
             }
-            Verbose::PrintMess("MERGE-VISUAL: There are " + to_string(pMergeMap->MapPointsInMap()) + " MPs in the map", Verbose::VERBOSITY_DEBUG);
-            Verbose::PrintMess("MERGE-VISUAL: It will be inserted " + to_string(vpCurrentMapMPs.size()) + " MPs in the map", Verbose::VERBOSITY_DEBUG);
 
             for(MapPoint* pMPi : vpCurrentMapMPs)
             {
@@ -1841,10 +1788,8 @@ void LoopClosing::MergeLocal()
                 pMergeMap->AddMapPoint(pMPi);
                 pCurrentMap->EraseMapPoint(pMPi);
             }
-            Verbose::PrintMess("MERGE-VISUAL: There are " + to_string(pMergeMap->MapPointsInMap()) + " MPs in the map", Verbose::VERBOSITY_DEBUG);
         }
 
-        Verbose::PrintMess("MERGE-VISUAL: Optimaze the essential graph", Verbose::VERBOSITY_DEBUG);
     }
 
 
@@ -1852,13 +1797,9 @@ void LoopClosing::MergeLocal()
     mpLocalMapper->Release();
 
 
-    Verbose::PrintMess("MERGE-VISUAL: Finally there are " + to_string(pMergeMap->KeyFramesInMap()) + "KFs and " + to_string(pMergeMap->MapPointsInMap()) + " MPs in the complete map ", Verbose::VERBOSITY_DEBUG);
-    Verbose::PrintMess("MERGE-VISUAL:Completed!!!!!", Verbose::VERBOSITY_DEBUG);
-
     if(bRelaunchBA && (!pCurrentMap->isImuInitialized() || (pCurrentMap->KeyFramesInMap()<200 && mpAtlas->CountMaps()==1)))
     {
         // Launch a new thread to perform Global Bundle Adjustment
-        Verbose::PrintMess("Relaunch Global BA", Verbose::VERBOSITY_DEBUG);
         mbRunningGBA = true;
         mbFinishedGBA = false;
         mbStopGBA = false;
@@ -2407,7 +2348,6 @@ void LoopClosing::ResetIfRequested()
 
 void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoopKF)
 {
-    Verbose::PrintMess("Starting Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
 
     const bool bImuInit = pActiveMap->isImuInitialized();
 
@@ -2434,8 +2374,6 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
 
         if(!mbStopGBA)
         {
-            Verbose::PrintMess("Global Bundle Adjustment finished", Verbose::VERBOSITY_NORMAL);
-            Verbose::PrintMess("Updating map ...", Verbose::VERBOSITY_NORMAL);
 
             mpLocalMapper->RequestStop();
             // Wait until Local Mapping has effectively stopped
@@ -2482,8 +2420,6 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
                             //cout << "Child velocity: " << pChild->GetVelocity() << endl;
                             pChild->mVwbGBA = Rcor*pChild->GetVelocity();
                         }
-                        else
-                            Verbose::PrintMess("Child velocity empty!! ", Verbose::VERBOSITY_NORMAL);
 
 
                         //cout << "Child bias: " << pChild->GetImuBias() << endl;
@@ -2500,66 +2436,11 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
                 pKF->mTcwBefGBA = pKF->GetPose();
                 //cout << "pKF->mTcwBefGBA: " << pKF->mTcwBefGBA << endl;
                 pKF->SetPose(pKF->mTcwGBA);
-                /*cv::Mat Tco_cn = pKF->mTcwBefGBA * pKF->mTcwGBA.inv();
-                cv::Vec3d trasl = Tco_cn.rowRange(0,3).col(3);
-                double dist = cv::norm(trasl);
-                cout << "GBA: KF " << pKF->mnId << " had been moved " << dist << " meters" << endl;
-                double desvX = 0;
-                double desvY = 0;
-                double desvZ = 0;
-                if(pKF->mbHasHessian)
-                {
-                    cv::Mat hessianInv = pKF->mHessianPose.inv();
-
-                    double covX = hessianInv.at<double>(3,3);
-                    desvX = std::sqrt(covX);
-                    double covY = hessianInv.at<double>(4,4);
-                    desvY = std::sqrt(covY);
-                    double covZ = hessianInv.at<double>(5,5);
-                    desvZ = std::sqrt(covZ);
-                    pKF->mbHasHessian = false;
-                }
-                if(dist > 1)
-                {
-                    cout << "--To much distance correction: It has " << pKF->GetConnectedKeyFrames().size() << " connected KFs" << endl;
-                    cout << "--It has " << pKF->GetCovisiblesByWeight(80).size() << " connected KF with 80 common matches or more" << endl;
-                    cout << "--It has " << pKF->GetCovisiblesByWeight(50).size() << " connected KF with 50 common matches or more" << endl;
-                    cout << "--It has " << pKF->GetCovisiblesByWeight(20).size() << " connected KF with 20 common matches or more" << endl;
-
-                    cout << "--STD in meters(x, y, z): " << desvX << ", " << desvY << ", " << desvZ << endl;
-
-
-                    string strNameFile = pKF->mNameFile;
-                    cv::Mat imLeft = cv::imread(strNameFile, CV_LOAD_IMAGE_UNCHANGED);
-
-                    cv::cvtColor(imLeft, imLeft, CV_GRAY2BGR);
-
-                    vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
-                    int num_MPs = 0;
-                    for(int i=0; i<vpMapPointsKF.size(); ++i)
-                    {
-                        if(!vpMapPointsKF[i] || vpMapPointsKF[i]->isBad())
-                        {
-                            continue;
-                        }
-                        num_MPs += 1;
-                        string strNumOBs = to_string(vpMapPointsKF[i]->Observations());
-                        cv::circle(imLeft, pKF->mvKeys[i].pt, 2, cv::Scalar(0, 255, 0));
-                        cv::putText(imLeft, strNumOBs, pKF->mvKeys[i].pt, CV_FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0));
-                    }
-                    cout << "--It has " << num_MPs << " MPs matched in the map" << endl;
-
-                    string namefile = "./test_GBA/GBA_" + to_string(nLoopKF) + "_KF" + to_string(pKF->mnId) +"_D" + to_string(dist) +".png";
-                    cv::imwrite(namefile, imLeft);
-                }*/
-
 
                 if(pKF->bImu)
                 {
                     //cout << "-------Update inertial values" << endl;
                     pKF->mVwbBefGBA = pKF->GetVelocity();
-                    if (pKF->mVwbGBA.empty())
-                        Verbose::PrintMess("pKF->mVwbGBA is empty", Verbose::VERBOSITY_NORMAL);
 
                     assert(!pKF->mVwbGBA.empty());
                     pKF->SetVelocity(pKF->mVwbGBA);
@@ -2618,7 +2499,6 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
 
             mpLocalMapper->Release();
 
-            Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
         }
 
         mbFinishedGBA = true;
