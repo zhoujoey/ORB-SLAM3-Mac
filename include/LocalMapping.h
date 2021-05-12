@@ -98,7 +98,6 @@ public:
     // For debugging (erase in normal mode)
     int mInitFr;
     int mIdxIteration;
-    string strSequence;
 
     bool mbNotBA1;
     bool mbNotBA2;

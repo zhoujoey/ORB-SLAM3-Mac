@@ -43,15 +43,6 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
     mNumLM = 0;
     mNumKFCulling=0;
 
-    //DEBUG: times and data from LocalMapping in each frame
-
-    strSequence = "";//_strSeqName;
-
-    //f_lm.open("localMapping_times" + strSequence + ".txt");
-    /*f_lm.open("localMapping_times.txt");
-
-    f_lm << "# Timestamp KF, Num CovKFs, Num KFs, Num RecentMPs, Num MPs, processKF, MPCulling, CreateMP, SearchNeigh, BA, KFCulling, [numFixKF_LBA]" << endl;
-    f_lm << fixed;*/
 }
 
 void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser)

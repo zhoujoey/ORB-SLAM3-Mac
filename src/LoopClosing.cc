@@ -227,17 +227,6 @@ void LoopClosing::Run()
         usleep(5000);
     }
 
-    //ofstream f_stats;
-    //f_stats.open("PlaceRecognition_stats" + mpLocalMapper->strSequence + ".txt");
-    //f_stats << "# current_timestamp, matched_timestamp, [0:Loop, 1:Merge]" << endl;
-    //f_stats << fixed;
-    //for(int i=0; i< vdPR_CurrentTime.size(); ++i)
-    //{
-    //    f_stats  << 1e9*vdPR_CurrentTime[i] << "," << 1e9*vdPR_MatchedTime[i] << "," << vnPR_TypeRecogn[i] << endl;
-    //}
-
-    //f_stats.close();
-
     SetFinish();
 }
 

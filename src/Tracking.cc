@@ -199,6 +199,18 @@ void Tracking::SetStepByStep(bool bSet)
 
 
 
+/**
+ * @brief 
+ * 输入左目RGB或RGBA图像，输出世界坐标系到该帧相机坐标系的变换矩阵
+ * 
+ * @param[in] im 单目图像
+ * @param[in] timestamp 时间戳
+ * @return cv::Mat 
+ * 
+ * Step 1 ：将彩色图像转为灰度图像
+ * Step 2 ：构造Frame
+ * Step 3 ：跟踪
+ */
 cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 {
     mImGray = im;
@@ -235,20 +247,11 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
             mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
     }
 
-    if (mState==NO_IMAGES_YET)
-        t0=timestamp;
-
-    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
-
 
     mCurrentFrame.mnDataset = mnNumDataset;
 
     lastID = mCurrentFrame.mnId;
     Track();
-
-    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-
-    double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t1 - t0).count();
 
     return mCurrentFrame.mTcw.clone();
 }
