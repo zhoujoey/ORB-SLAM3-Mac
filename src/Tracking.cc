@@ -31,7 +31,7 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-
+///构造函数
 Tracking::Tracking(
 System *pSys, 
 ORBVocabulary* pVoc, 
@@ -59,6 +59,7 @@ const int sensor):
 	mnFirstFrameId(0)
 {
     // Load camera parameters from settings file
+    // Step 1 从配置文件中加载相机参数
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
     float fx = fSettings["Camera.fx"];
@@ -85,15 +86,15 @@ const int sensor):
     DistCoef.at<float>(2) = fSettings["Camera.p1"];
     DistCoef.at<float>(3) = fSettings["Camera.p2"];
     const float k3 = fSettings["Camera.k3"];
-
+    //有些相机的畸变系数中会没有k3项
     if(k3!=0)
     {
         DistCoef.resize(5);
         DistCoef.at<float>(4) = k3;
     }
-
     DistCoef.copyTo(mDistCoef);
 
+    // 双目摄像头baseline * fx 50
     mbf = fSettings["Camera.bf"];
 
     float fps = fSettings["Camera.fps"];
@@ -125,10 +126,7 @@ const int sensor):
 
     mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
-    if(sensor==System::MONOCULAR || sensor==System::IMU_MONOCULAR)
-        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
-
-    initID = 0; lastID = 0;
+    mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
     if(sensor==System::IMU_MONOCULAR )
     {
@@ -151,11 +149,9 @@ const int sensor):
         mnFramesToResetIMU = mMaxFrames;
     }
 
-
-    mnNumDataset = 0;
-
 }
 
+//设置局部建图器
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
 {
     mpLocalMapper=pLocalMapper;
@@ -210,7 +206,7 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im,const double &timestamp)
 
     if (mSensor == System::MONOCULAR)
     {
-        if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
+        if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
             mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
         else
             mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
@@ -225,10 +221,6 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im,const double &timestamp)
             mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
     }
 
-
-    mCurrentFrame.mnDataset = mnNumDataset;
-
-    lastID = mCurrentFrame.mnId;
     Track();
 
     //返回当前帧的位姿
@@ -507,13 +499,15 @@ void Tracking::ComputeVelocitiesAccBias(const vector<Frame*> &vpFs, float &bax, 
         }
     }
 }
-
-void Tracking::ResetFrameIMU()
-{
-    // TODO To implement...
-}
-
-
+/*
+ * @brief Main tracking function. It is independent of the input sensor.
+ *
+ * track包含两部分：估计运动、跟踪局部地图
+ * 
+ * Step 1：初始化
+ * Step 2：跟踪
+ * Step 3：记录位姿信息，用于轨迹复现
+ */
 void Tracking::Track()
 {
 
@@ -762,7 +756,6 @@ void Tracking::Track()
                 if(mCurrentFrame.mnId==(mnLastRelocFrameId+mnFramesToResetIMU))
                 {
                     cout << "RESETING FRAME!!!" << endl;
-                    ResetFrameIMU();
                 }
                 else if(mCurrentFrame.mnId>(mnLastRelocFrameId+30))
                     mLastBias = mCurrentFrame.mImuBias;
@@ -1108,8 +1101,6 @@ void Tracking::CreateInitialMapMonocular()
     mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.push_back(pKFini);
 
     mState=OK;
-
-    initID = pKFcur->mnId;
 }
 
 
@@ -1592,8 +1583,10 @@ bool Tracking::NeedNewKeyFrame()
     }
 
     // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
+    // Step 7.2：很长时间没有插入关键帧，可以插入
     const bool c1a = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
     // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
+    // Step 7.3：满足插入关键帧的最小间隔并且localMapper处于空闲状态，可以插入
     const bool c1b = (mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames && bLocalMappingIdle);
     //Condition 1c: tracking is weak
     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.

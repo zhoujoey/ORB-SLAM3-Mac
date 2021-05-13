@@ -284,7 +284,6 @@ protected:
     // Perform preintegration from last frame
     void PreintegrateIMU();
     // Reset IMU biases and compute frame velocity
-    void ResetFrameIMU();
     void ComputeGyroBias(const vector<Frame*> &vpFs, float &bwx,  float &bwy, float &bwz);
     void ComputeVelocitiesAccBias(const vector<Frame*> &vpFs, float &bax,  float &bay, float &baz);
 
@@ -424,8 +423,6 @@ protected:
 
     //int nMapChangeIndex;
 
-    int mnNumDataset;
-
     ofstream f_track_stats;
 
     ofstream f_track_times;
@@ -435,8 +432,6 @@ protected:
     double mTime_NewKF_Dec;
 
     GeometricCamera* mpCamera;
-
-    int initID, lastID;
 
     cv::Mat mTlr;
 
