@@ -474,10 +474,6 @@ public:
 
     unsigned int mnOriginMapId;
 
-    string mNameFile;
-
-    int mnDataset;
-
     std::vector <KeyFrame*> mvpLoopCandKFs;
     std::vector <KeyFrame*> mvpMergeCandKFs;
 
@@ -579,18 +575,6 @@ public:
     cv::Mat GetRightTranslation();
 
     cv::Mat imgLeft, imgRight; //TODO Backup??
-
-    void PrintPointDistribution(){
-        int left = 0, right = 0;
-        int Nlim = (NLeft != -1) ? NLeft : N;
-        for(int i = 0; i < N; i++){
-            if(mvpMapPoints[i]){
-                if(i < Nlim) left++;
-                else right++;
-            }
-        }
-        cout << "Point distribution in KeyFrame: left-> " << left << " --- right-> " << right << endl;
-    }
 
 
 };

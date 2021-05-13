@@ -1023,8 +1023,6 @@ void Tracking::CreateInitialMapMonocular()
     // Bundle Adjustment
     Optimizer::GlobalBundleAdjustemnt(mpAtlas->GetCurrentMap(),20);
 
-    pKFcur->PrintPointDistribution();
-
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
     float invMedianDepth;
     if(mSensor == System::IMU_MONOCULAR)

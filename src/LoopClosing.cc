@@ -302,34 +302,16 @@ bool LoopClosing::NewDetectCommonRegions()
 
             if(!mbLoopDetected)
             {
-                //f_succes_pr << mpCurrentKF->mNameFile << " " << "8"<< endl;
-                //f_succes_pr << "% Number of spatial consensous: " << std::to_string(mnLoopNumCoincidences) << endl;
                 cout << "PR: Loop detected with Reffine Sim3" << endl;
             }
         }
         else
         {
             bLoopDetectedInKF = false;
-            /*f_succes_pr << mpCurrentKF->mNameFile << " " << "8"<< endl;
-            f_succes_pr << "% Number of spatial consensous: " << std::to_string(mnLoopNumCoincidences) << endl;*/
 
             mnLoopNumNotFound++;
             if(mnLoopNumNotFound >= 2)
             {
-                /*for(int i=0; i<mvpLoopLastKF.size(); ++i)
-                {
-                    mvpLoopLastKF[i]->SetErase();
-                    mvpLoopCandidateKF[i]->SetErase();
-                    mvpLoopLastKF[i]->mbCurrentPlaceRecognition = true;
-                }
-
-                mvpLoopCandidateKF.clear();
-                mvpLoopLastKF.clear();
-                mvg2oSim3LoopTcw.clear();
-                mvnLoopNumMatches.clear();
-                mvvpLoopMapPoints.clear();
-                mvvpLoopMatchedMapPoints.clear();*/
-
                 mpLoopLastCurrentKF->SetErase();
                 mpLoopMatchedKF->SetErase();
                 //mg2oLoopScw;
@@ -855,8 +837,6 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<KeyFrame*> &vpBowCand, 
             }
         }
 
-//        f_succes_pr << mpCurrentKF->mNameFile << " " << std::to_string(maxStage) << endl;
-//        f_succes_pr << "% NumCand: " << std::to_string(numCandidates) << "; matches: " << std::to_string(maxMatched) << endl;
     }
     return false;
 }
@@ -1804,52 +1784,6 @@ void LoopClosing::MergeLocal()
     mpAtlas->RemoveBadMaps();
 
 }
-
-void LoopClosing::printReprojectionError(set<KeyFrame*> &spLocalWindowKFs, KeyFrame* mpCurrentKF, string &name)
-{
-    string path_imgs = "./test_Reproj/";
-    for(KeyFrame* pKFi : spLocalWindowKFs)
-    {
-        //cout << "KF " << pKFi->mnId << endl;
-        cv::Mat img_i = cv::imread(pKFi->mNameFile, CV_LOAD_IMAGE_UNCHANGED);
-        //cout << "Image -> " << img_i.cols << ", " << img_i.rows << endl;
-        cv::cvtColor(img_i, img_i, CV_GRAY2BGR);
-        //cout << "Change of color in the image " << endl;
-
-        vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
-        int num_points = 0;
-        for(int j=0; j<vpMPs.size(); ++j)
-        {
-            MapPoint* pMPij = vpMPs[j];
-            if(!pMPij || pMPij->isBad())
-            {
-                continue;
-            }
-
-            cv::KeyPoint point_img = pKFi->mvKeysUn[j];
-            cv::Point2f reproj_p;
-            float u, v;
-            bool bIsInImage = pKFi->ProjectPointUnDistort(pMPij, reproj_p, u, v);
-            if(bIsInImage){
-                //cout << "Reproj in the image" << endl;
-                cv::circle(img_i, point_img.pt, 1/*point_img.octave*/, cv::Scalar(0, 255, 0));
-                cv::line(img_i, point_img.pt, reproj_p, cv::Scalar(0, 0, 255));
-                num_points++;
-            }
-            else
-            {
-                //cout << "Reproj out of the image" << endl;
-                cv::circle(img_i, point_img.pt, point_img.octave, cv::Scalar(0, 0, 255));
-            }
-
-        }
-        //cout << "Image painted" << endl;
-        string filename_img = path_imgs +  "KF" + to_string(mpCurrentKF->mnId) + "_" + to_string(pKFi->mnId) +  name + "points" + to_string(num_points) + ".png";
-        cv::imwrite(filename_img, img_i);
-    }
-
-}
-
 
 void LoopClosing::MergeLocal2()
 {

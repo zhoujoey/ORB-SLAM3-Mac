@@ -71,7 +71,6 @@ Frame::Frame(const Frame &frame)
      mvpMapPoints(frame.mvpMapPoints), 
 	 mvbOutlier(frame.mvbOutlier), 
 	 mImuCalib(frame.mImuCalib), 
-	 mnCloseMPs(frame.mnCloseMPs),
      mpImuPreintegrated(frame.mpImuPreintegrated), 
 	 mpImuPreintegratedFrame(frame.mpImuPreintegratedFrame), 
 	 mImuBias(frame.mImuBias),
@@ -82,8 +81,6 @@ Frame::Frame(const Frame &frame)
 	 mfLogScaleFactor(frame.mfLogScaleFactor),
      mvScaleFactors(frame.mvScaleFactors), 
 	 mvInvScaleFactors(frame.mvInvScaleFactors), 
-	 mNameFile(frame.mNameFile), 
-	 mnDataset(frame.mnDataset),
      mvLevelSigma2(frame.mvLevelSigma2), 
 	 mvInvLevelSigma2(frame.mvInvLevelSigma2), 
 	 mpPrevFrame(frame.mpPrevFrame), 
@@ -97,13 +94,10 @@ Frame::Frame(const Frame &frame)
 	 monoRight(frame.monoRight), 
 	 mvLeftToRightMatch(frame.mvLeftToRightMatch),
      mvRightToLeftMatch(frame.mvRightToLeftMatch), 
-	 mvStereo3Dpoints(frame.mvStereo3Dpoints),
      mTlr(frame.mTlr.clone()), 
 	 mRlr(frame.mRlr.clone()), 
 	 mtlr(frame.mtlr.clone()), 
-	 mTrl(frame.mTrl.clone()), 
-	 mTimeStereoMatch(frame.mTimeStereoMatch), 
-	 mTimeORB_Ext(frame.mTimeORB_Ext)
+	 mTrl(frame.mTrl.clone())
 {
     for(int i=0;i<FRAME_GRID_COLS;i++)
         for(int j=0; j<FRAME_GRID_ROWS; j++){
@@ -127,8 +121,7 @@ Frame::Frame(const Frame &frame)
 Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-     mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera),
-     mTimeStereoMatch(0), mTimeORB_Ext(0)
+     mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera)
 {
     // Frame ID
     mnId=nNextId++;
@@ -157,7 +150,6 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     // Set no stereo information
     mvuRight = vector<float>(N,-1);
     mvDepth = vector<float>(N,-1);
-    mnCloseMPs = 0;
 
     mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
 
@@ -193,7 +185,6 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     mvRightToLeftMatch = vector<int>(0);
     mTlr = cv::Mat(3,4,CV_32F);
     mTrl = cv::Mat(3,4,CV_32F);
-    mvStereo3Dpoints = vector<cv::Mat>(0);
     monoLeft = -1;
     monoRight = -1;
 
@@ -918,10 +909,6 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
     }
 
     return true;
-}
-
-cv::Mat Frame::UnprojectStereoFishEye(const int &i){
-    return mRwc*mvStereo3Dpoints[i]+mOw;
 }
 
 } //namespace ORB_SLAM

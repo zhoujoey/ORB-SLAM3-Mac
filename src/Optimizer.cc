@@ -3376,7 +3376,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches1, g2o::Sim3 &g2oS12, const float th2,
                             const bool bFixScale, Eigen::Matrix<double,7,7> &mAcumHessian, const bool bAllPoints)
 {
-    bool bShowImages = false;
 
     g2o::SparseOptimizer optimizer;
     g2o::BlockSolverX::LinearSolverType * linearSolver;
@@ -3439,11 +3438,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     int nInKF2 = 0;
     int nOutKF2 = 0;
     int nMatchWithoutMP = 0;
-
-    cv::Mat img1 = cv::imread(pKF1->mNameFile, CV_LOAD_IMAGE_UNCHANGED);
-    cv::cvtColor(img1, img1, CV_GRAY2BGR);
-    cv::Mat img2 = cv::imread(pKF2->mNameFile, CV_LOAD_IMAGE_UNCHANGED);
-    cv::cvtColor(img2, img2, CV_GRAY2BGR);
 
     vector<int> vIdsOnlyInKF2;
 
@@ -3510,8 +3504,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
                 vIdsOnlyInKF2.push_back(id2);
             }
 
-            cv::circle(img1, pKF1->mvKeys[i].pt, 1, cv::Scalar(0, 0, 255));
-
             continue;
 
         }
@@ -3534,23 +3526,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
         obs1 << kpUn1.pt.x, kpUn1.pt.y;
 
         ORB_SLAM3::EdgeSim3ProjectXYZ* e12 = new ORB_SLAM3::EdgeSim3ProjectXYZ();
-
-
-        if(bShowImages) //TODO test to project the matched points in the image
-        {
-            cv::circle(img1, pKF1->mvKeys[i].pt, 1, cv::Scalar(0, 255, 0));
-
-            Eigen::Matrix<double,3,1> eigP3D2c = Converter::toVector3d(P3D2c);
-            Eigen::Matrix<double,3,1> eigP3D1c = g2oS12.map(eigP3D2c);
-            cv::Mat cvP3D1c = Converter::toCvMat(eigP3D1c);
-
-            float invz = 1/cvP3D1c.at<float>(2);
-            float x = fx1 * cvP3D1c.at<float>(0)*invz + cx1;
-            float y = fy1 * cvP3D1c.at<float>(1)*invz + cy1;
-
-            cv::Point2f ptProjPoint(x, y);
-            cv::line(img1, pKF1->mvKeys[i].pt, ptProjPoint, cv::Scalar(255, 0, 0), 1);
-        }
 
 
         e12->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id2)));
@@ -3576,10 +3551,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
             nInKF2++;
 
-            if(bShowImages)
-            {
-                cv::circle(img2, pKF2->mvKeys[i2].pt, 1, cv::Scalar(0, 255, 0));
-            }
         }
         else
         {
@@ -3587,15 +3558,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
             float x = P3D2c.at<float>(0)*invz;
             float y = P3D2c.at<float>(1)*invz;
 
-            /*cv::Mat mat(1,2,CV_32F);
-            mat.at<float>(0,0) = x;
-            mat.at<float>(0,1) = y;
-            mat=mat.reshape(2);
-            cv::undistortPoints(mat,mat,K2,DistCoeff2,cv::Mat(),K2);
-            mat=mat.reshape(1);
-
-            x = mat.at<float>(0,0);
-            y = mat.at<float>(0,1);*/
 
             obs2 << x, y;
             kpUn2 = cv::KeyPoint(cv::Point2f(x, y), pMP2->mnTrackScaleLevel);
@@ -3603,20 +3565,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
             inKF2 = false;
             nOutKF2++;
 
-            if(bShowImages)
-            {
-                cv::circle(img2, kpUn2.pt, 1, cv::Scalar(0, 0, 255));
-            }
 
-            //TODO print projection, because all of them become in outliers
-
-
-
-            // Project in image and check it is not outside
-            //float u = pKF2->fx * x + pKF2->cx;
-            //float v = pKF2->fy * y + pKF2->cy;
-            //obs2 << u, v;
-            //kpUn2 = cv::KeyPoint(cv::Point2f(u, v), pMP2->mnTrackScaleLevel);
         }
 
         {
@@ -3628,11 +3577,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
             float x = fx2 * cvP3D2c.at<float>(0)*invz + cx2;
             float y = fy2 * cvP3D2c.at<float>(1)*invz + cy2;
 
-            if(bShowImages)
-            {
-                cv::Point2f ptProjPoint(x, y);
-                cv::line(img2, kpUn2.pt, ptProjPoint, cv::Scalar(255, 0, 0), 1);
-            }
         }
 
         ORB_SLAM3::EdgeInverseSim3ProjectXYZ* e21 = new ORB_SLAM3::EdgeInverseSim3ProjectXYZ();
@@ -3689,13 +3633,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
         //Check if remove the robust adjustment improve the result
         e12->setRobustKernel(0);
         e21->setRobustKernel(0);
-    }
-    if(bShowImages)
-    {
-        string pathImg1 = "./test_OptSim3/KF_" + to_string(pKF1->mnId) + "_Main.jpg";
-        cv::imwrite(pathImg1, img1);
-        string pathImg2 = "./test_OptSim3/KF_" + to_string(pKF1->mnId) + "_Matched.jpg";
-        cv::imwrite(pathImg2, img2);
     }
 
     int nMoreIterations;
@@ -5622,7 +5559,6 @@ void Optimizer::MergeBundleAdjustmentVisual(KeyFrame* pCurrentKF, vector<KeyFram
 
 void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdjustKF, vector<KeyFrame*> vpFixedKF, bool *pbStopFlag)
 {
-    bool bShowImages = false;
 
     vector<MapPoint*> vpMPs;
 
@@ -6123,103 +6059,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
             {
                 numStereoOptPoints++;
                 vpStereoMPsOpt.push_back(pMP);
-            }
-        }
-
-
-        if(dist > 1.0)
-        {
-            if(bShowImages)
-            {
-                string strNameFile = pKFi->mNameFile;
-                cv::Mat imLeft = cv::imread(strNameFile, CV_LOAD_IMAGE_UNCHANGED);
-
-                cv::cvtColor(imLeft, imLeft, CV_GRAY2BGR);
-
-                int numPointsMono = 0, numPointsStereo = 0;
-                int numPointsMonoBad = 0, numPointsStereoBad = 0;
-                for(int i=0; i<vpMonoMPsOpt.size(); ++i)
-                {
-                    if(!vpMonoMPsOpt[i] || vpMonoMPsOpt[i]->isBad())
-                    {
-                        continue;
-                    }
-                    int index = get<0>(vpMonoMPsOpt[i]->GetIndexInKeyFrame(pKFi));
-                    if(index < 0)
-                    {
-                        //cout << "LBA ERROR: KF has a monocular observation which is not recognized by the MP" << endl;
-                        //cout << "LBA: KF " << pKFi->mnId << " and MP " << vpMonoMPsOpt[i]->mnId << " with index " << endl;
-                        continue;
-                    }
-
-                    //string strNumOBs = to_string(vpMapPointsKF[i]->Observations());
-                    cv::circle(imLeft, pKFi->mvKeys[index].pt, 2, cv::Scalar(255, 0, 0));
-                    //cv::putText(imLeft, strNumOBs, pKF->mvKeys[i].pt, CV_FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0));
-                    numPointsMono++;
-                 }
-
-                 for(int i=0; i<vpStereoMPsOpt.size(); ++i)
-                 {
-                     if(!vpStereoMPsOpt[i] || vpStereoMPsOpt[i]->isBad())
-                     {
-                         continue;
-                     }
-                     int index = get<0>(vpStereoMPsOpt[i]->GetIndexInKeyFrame(pKFi));
-                     if(index < 0)
-                     {
-                         //cout << "LBA: KF has a stereo observation which is not recognized by the MP" << endl;
-                         //cout << "LBA: KF " << pKFi->mnId << " and MP " << vpStereoMPsOpt[i]->mnId << endl;
-                         continue;
-                      }
-
-                      //string strNumOBs = to_string(vpMapPointsKF[i]->Observations());
-                      cv::circle(imLeft, pKFi->mvKeys[index].pt, 2, cv::Scalar(0, 255, 0));
-                      //cv::putText(imLeft, strNumOBs, pKF->mvKeys[i].pt, CV_FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0));
-                      numPointsStereo++;
-                 }
-
-                 for(int i=0; i<vpMonoMPsBad.size(); ++i)
-                 {
-                     if(!vpMonoMPsBad[i] || vpMonoMPsBad[i]->isBad())
-                     {
-                         continue;
-                     }
-                     int index = get<0>(vpMonoMPsBad[i]->GetIndexInKeyFrame(pKFi));
-                     if(index < 0)
-                     {
-                         //cout << "LBA ERROR: KF has a monocular observation which is not recognized by the MP" << endl;
-                         //cout << "LBA: KF " << pKFi->mnId << " and MP " << vpMonoMPsOpt[i]->mnId << " with index " << endl;
-                         continue;
-                     }
-
-                    //string strNumOBs = to_string(vpMapPointsKF[i]->Observations());
-                    cv::circle(imLeft, pKFi->mvKeys[index].pt, 2, cv::Scalar(0, 0, 255));
-                    //cv::putText(imLeft, strNumOBs, pKF->mvKeys[i].pt, CV_FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0));
-                    numPointsMonoBad++;
-                }
-                for(int i=0; i<vpStereoMPsBad.size(); ++i)
-                {
-                    if(!vpStereoMPsBad[i] || vpStereoMPsBad[i]->isBad())
-                    {
-                        continue;
-                    }
-                    int index = get<0>(vpStereoMPsBad[i]->GetIndexInKeyFrame(pKFi));
-                    if(index < 0)
-                    {
-                        //cout << "LBA: KF has a stereo observation which is not recognized by the MP" << endl;
-                        //cout << "LBA: KF " << pKFi->mnId << " and MP " << vpStereoMPsOpt[i]->mnId << endl;
-                        continue;
-                    }
-
-                    //string strNumOBs = to_string(vpMapPointsKF[i]->Observations());
-                    cv::circle(imLeft, pKFi->mvKeys[index].pt, 2, cv::Scalar(0, 0, 255));
-                    //cv::putText(imLeft, strNumOBs, pKF->mvKeys[i].pt, CV_FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 0, 0));
-                    numPointsStereoBad++;
-                }
-
-                string namefile = "./test_LBA/LBA_KF" + to_string(pKFi->mnId) + "_" + to_string(numPointsMono + numPointsStereo) +"_D" + to_string(dist) +".png";
-                cv::imwrite(namefile, imLeft);
-
             }
         }
         pKFi->SetPose(Tiw);

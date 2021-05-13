@@ -113,8 +113,7 @@ protected:
     void MergeLocal2();
 
     void CheckObservations(set<KeyFrame*> &spKFsMap1, set<KeyFrame*> &spKFsMap2);
-    void printReprojectionError(set<KeyFrame*> &spLocalWindowKFs, KeyFrame* mpCurrentKF, string &name);
-
+    
     void ResetIfRequested();
     bool mbResetRequested;
     bool mbResetActiveMapRequested;

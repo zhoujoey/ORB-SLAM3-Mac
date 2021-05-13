@@ -136,8 +136,6 @@ public:
 
     unsigned int GetLowerKFID();
 
-    void printReprojectionError(std::list<KeyFrame*> &lpLocalWindowKFs, KeyFrame* mpCurrentKF, string &name, string &name_folder);
-
     vector<KeyFrame*> mvpKeyFrameOrigins;
     vector<unsigned long int> mvBackupKeyFrameOriginsId;
     KeyFrame* mpFirstRegionKF;

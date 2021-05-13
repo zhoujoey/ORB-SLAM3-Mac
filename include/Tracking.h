@@ -421,7 +421,7 @@ protected:
     ///临时的地图点,用于提高双目和RGBD摄像头的帧间效果,用完之后就扔了
     list<MapPoint*> mlpTemporalPoints;
 
-    //int nMapChangeIndex;
+
 
     ofstream f_track_stats;
 
