@@ -175,17 +175,17 @@ int main(int argc, char **argv)
 
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
         double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
-        ttrack_tot += ttrack;
-        vTimesTrack[ni]=ttrack;
-        // Wait to load the next frame
-        double T=0;
-        if(ni<nImages-1)
-            T = vTimestampsCam[ni+1]-tframe;
-        else if(ni>0)
-            T = tframe-vTimestampsCam[ni-1];
-
-        if(ttrack<T)
-            usleep((T-ttrack)*1e6); // 1e6
+//        ttrack_tot += ttrack;
+//        vTimesTrack[ni]=ttrack;
+//        // Wait to load the next frame
+//        double T=0;
+//        if(ni<nImages-1)
+//            T = vTimestampsCam[ni+1]-tframe;
+//        else if(ni>0)
+//            T = tframe-vTimestampsCam[ni-1];
+//
+//        if(ttrack<T)
+//            usleep((T-ttrack)*1e6); // 1e6
     }
 
 

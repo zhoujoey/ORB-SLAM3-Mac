@@ -101,7 +101,6 @@ void Viewer::Run()
 
     bool bFollow = true;
     bool bLocalizationMode = false;
-    bool bStepByStep = false;
     bool bCameraView = true;
 
     if(mpTracker->mSensor == mpSystem->MONOCULAR )
@@ -186,23 +185,6 @@ void Viewer::Run()
         {
             mpSystem->DeactivateLocalizationMode();
             bLocalizationMode = false;
-        }
-
-        if(menuStepByStep && !bStepByStep)
-        {
-            mpTracker->SetStepByStep(true);
-            bStepByStep = true;
-        }
-        else if(!menuStepByStep && bStepByStep)
-        {
-            mpTracker->SetStepByStep(false);
-            bStepByStep = false;
-        }
-
-        if(menuStep)
-        {
-            mpTracker->mbStep = true;
-            menuStep = false;
         }
 
 

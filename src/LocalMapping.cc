@@ -1243,7 +1243,6 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     {
         cout << "IMU in Map " << mpAtlas->GetCurrentMap()->GetId() << " is initialized" << endl;
         mpAtlas->SetImuInitialized();
-        mpTracker->t0IMU = mpTracker->mCurrentFrame.mTimeStamp;
         mpCurrentKeyFrame->bImu = true;
     }
 

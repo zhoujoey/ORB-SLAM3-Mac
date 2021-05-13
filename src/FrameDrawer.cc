@@ -423,8 +423,6 @@ void FrameDrawer::Update(Tracking *pTracker)
     mmProjectPoints = mCurrentFrame.mmProjectPoints;
     //mmMatchedInImage = mCurrentFrame.mmMatchedInImage;
     mmMatchedInImage.clear();
-
-    mvpLocalMap = pTracker->GetLocalMapMPS();
     mvMatchedKeys.clear();
     mvMatchedKeys.reserve(N);
     mvpMatchedMPs.clear();

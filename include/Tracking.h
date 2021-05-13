@@ -1,22 +1,3 @@
-/**
-* This file is part of ORB-SLAM3
-*
-* Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-*
-* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-* License as published by the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
-* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
-
-
 #ifndef TRACKING_H
 #define TRACKING_H
 
@@ -24,22 +5,21 @@
 #include<opencv2/features2d/features2d.hpp>
 #include <opencv2/video/tracking.hpp>
 
-#include"Viewer.h"
-#include"FrameDrawer.h"
+#include "Viewer.h"
+#include "FrameDrawer.h"
 #include"Atlas.h"
-#include"LocalMapping.h"
-#include"LoopClosing.h"
-#include"Frame.h"
+#include "LocalMapping.h"
+#include "LoopClosing.h"
+#include "Frame.h"
 #include "ORBVocabulary.h"
-#include"KeyFrameDatabase.h"
-#include"ORBextractor.h"
+#include "KeyFrameDatabase.h"
+#include "ORBextractor.h"
 #include "Initializer.h"
 #include "MapDrawer.h"
 #include "System.h"
 #include "ImuTypes.h"
 
 #include "GeometricCamera.h"
-
 #include <mutex>
 #include <unordered_set>
 
@@ -53,29 +33,68 @@ class LocalMapping;
 class LoopClosing;
 class System;
 
+/**
+ * @brief  追踪当前帧功能
+ * 
+ */
 class Tracking
 {  
 
 public:
+    /**
+     * @brief 构造函数
+     * 
+     * @param[in] pSys              系统实例 
+     * @param[in] pVoc              字典指针
+     * @param[in] pFrameDrawer      帧绘制器
+     * @param[in] pMapDrawer        地图绘制器
+     * @param[in] pMap              地图句柄
+     * @param[in] pKFDB             关键帧数据库句柄
+     * @param[in] strSettingPath    配置文件路径
+     * @param[in] sensor            传感器类型
+     */
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
-             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const string &_nameSeq=std::string());
+             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
 
-    ~Tracking();
-
+    /**
+     * @brief 处理单目输入图像
+     * 
+     * @param[in] im            图像
+     * @param[in] timestamp     时间戳
+     * @return cv::Mat          世界坐标系到该帧相机坐标系的变换矩阵
+     */
     cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
-    // cv::Mat GrabImageImuMonocular(const cv::Mat &im, const double &timestamp);
-
-    void GrabImuData(const IMU::Point &imuMeasurement);
-
+	void GrabImuData(const IMU::Point &imuMeasurement);
+    /**
+     * @brief 设置局部地图句柄
+     * 
+     * @param[in] pLocalMapper 局部建图器
+     */
     void SetLocalMapper(LocalMapping* pLocalMapper);
+
+    /**
+     * @brief 设置回环检测器句柄
+     * 
+     * @param[in] pLoopClosing 回环检测器
+     */
     void SetLoopClosing(LoopClosing* pLoopClosing);
+
+    /**
+     * @brief 设置可视化查看器句柄
+     * 
+     * @param[in] pViewer 可视化查看器
+     */
     void SetViewer(Viewer* pViewer);
-    void SetStepByStep(bool bSet);
 
     // Load new settings
-    // The focal lenght should be similar or scale prediction will fail when projecting points
+    // The focal length should be similar or scale prediction will fail when projecting points
+    // TODO: Modify MapPoint::PredictScale to take into account focal lenght
+    /**
+     * @brief 
+     * 
+     * @param[in] strSettingPath 配置文件路径
+     */
     void ChangeCalibration(const string &strSettingPath);
-
     void UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame);
     KeyFrame* GetLastKeyFrame()
     {
@@ -85,109 +104,185 @@ public:
     void CreateMapInAtlas();
     std::mutex mMutexTracks;
 
-    //--
-    void NewDataset();
-    int GetNumberDataset();
     int GetMatchesInliers();
 public:
 
     // Tracking states
+    ///跟踪状态类型
     enum eTrackingState{
-        SYSTEM_NOT_READY=-1,
-        NO_IMAGES_YET=0,
-        NOT_INITIALIZED=1,
-        OK=2,
+        SYSTEM_NOT_READY=-1,        ///<系统没有准备好的状态,一般就是在启动后加载配置文件和词典文件时候的状态
+        NO_IMAGES_YET=0,            ///<当前无图像
+        NOT_INITIALIZED=1,          ///<有图像但是没有完成初始化
+        OK=2,                       ///<正常时候的工作状态
         RECENTLY_LOST=3,
         LOST=4,
         OK_KLT=5
     };
 
+    ///跟踪状态
     eTrackingState mState;
+    ///上一帧的跟踪状态.这个变量在绘制当前帧的时候会被使用到
     eTrackingState mLastProcessedState;
 
-    // Input sensor
+    // Input sensor:MONOCULAR, STEREO, RGBD
+    ///传感器类型
     int mSensor;
 
     // Current Frame
+    ///追踪线程中有一个当前帧
     Frame mCurrentFrame;
     Frame mLastFrame;
-
+	
     cv::Mat mImGray;
 
     // Initialization Variables (Monocular)
+    // 初始化时前两帧相关变量
+    ///之前的匹配
     std::vector<int> mvIniLastMatches;
-    std::vector<int> mvIniMatches;
+    ///初始化阶段中,当前帧中的特征点和参考帧中的特征点的匹配关系
+    std::vector<int> mvIniMatches;// 跟踪初始化时前两帧之间的匹配
+    ///在初始化的过程中,保存参考帧中的特征点
     std::vector<cv::Point2f> mvbPrevMatched;
+    ///初始化过程中匹配后进行三角化得到的空间点
     std::vector<cv::Point3f> mvIniP3D;
+    ///初始化过程中的参考帧
     Frame mInitialFrame;
 
     // Lists used to recover the full camera trajectory at the end of the execution.
     // Basically we store the reference keyframe for each frame and its relative transformation
+    ///所有的参考关键帧的位姿;看上面注释的意思,这里存储的也是相对位姿
     list<cv::Mat> mlRelativeFramePoses;
+    ///参考关键帧
     list<KeyFrame*> mlpReferences;
+    ///所有帧的时间戳  //? 还是关键帧的时间戳?
     list<double> mlFrameTimes;
+    ///是否跟丢的标志
     list<bool> mlbLost;
 
-    // frames with estimated pose
-    int mTrackedFr;
-    bool mbStep;
 
 
-    void Reset(bool bLocMap = false);
-    void ResetActiveMap(bool bLocMap = false);
-
-    float mMeanTrack;
-    bool mbInitWith3KFs;
-    double t0; // time-stamp of first read frame
-    double t0vis; // time-stamp of first inserted keyframe
-    double t0IMU; // time-stamp of IMU initialization
+    /** 
+     * @brief 整个系统进行复位操作
+     */
+    void Reset();
+    void ResetActiveMap();
 
 
-    vector<MapPoint*> GetLocalMapMPS();
-
-
-    //TEST--
-    cv::Mat M1l, M2l;
-    cv::Mat M1r, M2r;
-
-    bool mbWriteStats;
 
 protected:
 
     // Main tracking function. It is independent of the input sensor.
+    /** @brief 主追踪进程 */
     void Track();
 
-    // Map initialization for stereo and RGB-D
-    void StereoInitialization();
 
     // Map initialization for monocular
+    /** @brief 单目输入的时候所进行的初始化操作 */
     void MonocularInitialization();
-    void CreateNewMapPoints();
-    cv::Mat ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2);
+   
+    /** @brief 单目输入的时候生成初始地图 */
     void CreateInitialMapMonocular();
 
-    void CheckReplacedInLastFrame();
-    bool TrackReferenceKeyFrame();
-    void UpdateLastFrame();
-    bool TrackWithMotionModel();
-    bool PredictStateIMU();
+    /**
+     * @brief 检查上一帧中的MapPoints是否被替换
+     * 
+     * Local Mapping线程可能会将关键帧中某些MapPoints进行替换，由于tracking中需要用到mLastFrame，这里检查并更新上一帧中被替换的MapPoints
+     * @see LocalMapping::SearchInNeighbors()
+     */
 
+    void CheckReplacedInLastFrame();
+    /**
+     * @brief 对参考关键帧的MapPoints进行跟踪
+     * 
+     * 1. 计算当前帧的词包，将当前帧的特征点分到特定层的nodes上
+     * 2. 对属于同一node的描述子进行匹配
+     * 3. 根据匹配对估计当前帧的姿态
+     * 4. 根据姿态剔除误匹配
+     * @return 如果匹配数大于10，返回true
+     */
+
+    bool TrackReferenceKeyFrame();
+    /**
+     * @brief 双目或rgbd摄像头根据深度值为上一帧产生新的MapPoints
+     *
+     * 在双目和rgbd情况下，选取一些深度小一些的点（可靠一些） \n
+     * 可以通过深度值产生一些新的MapPoints
+     */
+
+    void UpdateLastFrame();
+    
+    /**
+     * @brief 根据匀速度模型对上一帧的MapPoints进行跟踪
+     * 
+     * 1. 非单目情况，需要对上一帧产生一些新的MapPoints（临时）     
+     * 2. 将上一帧的MapPoints投影到当前帧的图像平面上，在投影的位置进行区域匹配
+     * 3. 根据匹配对估计当前帧的姿态
+     * 4. 根据姿态剔除误匹配
+     * @return 如果匹配数大于10，返回true
+     * @see V-B Initial Pose Estimation From Previous Frame
+     */
+    bool TrackWithMotionModel();
+	bool PredictStateIMU();
+    /** @brief 重定位模块 */
     bool Relocalization();
 
+    /**
+     * @brief 更新局部地图 LocalMap
+     *
+     * 局部地图包括：共视关键帧、临近关键帧及其子父关键帧，由这些关键帧观测到的MapPoints
+     */
     void UpdateLocalMap();
+    
+    /**
+     * @brief 更新局部地图点（来自局部关键帧）
+     * 
+     */
     void UpdateLocalPoints();
+
+   /**
+     * @brief 更新局部关键帧
+     * 方法是遍历当前帧的MapPoints，将观测到这些MapPoints的关键帧和相邻的关键帧及其父子关键帧，作为mvpLocalKeyFrames
+     * Step 1：遍历当前帧的MapPoints，记录所有能观测到当前帧MapPoints的关键帧 
+     * Step 2：更新局部关键帧（mvpLocalKeyFrames），添加局部关键帧有三个策略
+     * Step 2.1 策略1：能观测到当前帧MapPoints的关键帧作为局部关键帧 （将邻居拉拢入伙）
+     * Step 2.2 策略2：遍历策略1得到的局部关键帧里共视程度很高的关键帧，将他们的家人和邻居作为局部关键帧
+     * Step 3：更新当前帧的参考关键帧，与自己共视程度最高的关键帧作为参考关键帧
+     */
     void UpdateLocalKeyFrames();
 
+    /**
+     * @brief 对Local Map的MapPoints进行跟踪
+     * Step 1：更新局部关键帧 mvpLocalKeyFrames 和局部地图点 mvpLocalMapPoints
+     * Step 2：在局部地图中查找与当前帧匹配的MapPoints, 其实也就是对局部地图点进行跟踪
+     * Step 3：更新局部所有MapPoints后对位姿再次优化
+     * Step 4：更新当前帧的MapPoints被观测程度，并统计跟踪局部地图的效果
+     * Step 5：根据跟踪匹配数目及回环情况决定是否跟踪成功
+     * @return true         跟踪成功
+     * @return false        跟踪失败
+     */
     bool TrackLocalMap();
-    bool TrackLocalMap_old();
+	bool TrackLocalMap_old();
+    /**
+     * @brief 对 Local MapPoints 进行跟踪
+     * 
+     * 在局部地图中查找在当前帧视野范围内的点，将视野范围内的点和当前帧的特征点进行投影匹配
+     */
     void SearchLocalPoints();
 
+    /**
+     * @brief 断当前帧是否为关键帧
+     * @return true if needed
+     */
     bool NeedNewKeyFrame();
+    /**
+     * @brief 创建新的关键帧
+     *
+     * 对于非单目的情况，同时创建新的MapPoints
+     */
     void CreateNewKeyFrame();
 
     // Perform preintegration from last frame
     void PreintegrateIMU();
-
     // Reset IMU biases and compute frame velocity
     void ResetFrameIMU();
     void ComputeGyroBias(const vector<Frame*> &vpFs, float &bwx,  float &bwy, float &bwz);
@@ -216,49 +311,71 @@ protected:
     // points in the map. Still tracking will continue if there are enough matches with temporal points.
     // In that case we are doing visual odometry. The system will try to do relocalization to recover
     // "zero-drift" localization to the map.
+    ///当进行纯定位时才会有的一个变量,为false表示该帧匹配了很多的地图点,跟踪是正常的;如果少于10个则为true,表示快要完蛋了
     bool mbVO;
 
     //Other Thread Pointers
+    ///局部建图器句柄
     LocalMapping* mpLocalMapper;
+    ///回环检测器句柄
     LoopClosing* mpLoopClosing;
 
     //ORB
+    // orb特征提取器，不管单目还是双目，mpORBextractorLeft都要用到
+    // 如果是双目，则要用到mpORBextractorRight
+    // NOTICE 如果是单目，在初始化的时候使用mpIniORBextractor而不是mpORBextractorLeft，
+    // mpIniORBextractor属性中提取的特征点个数是mpORBextractorLeft的两倍
+
+    ///作者自己编写和改良的ORB特征点提取器
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
+    ///在初始化的时候使用的特征点提取器,其提取到的特征点个数会更多
     ORBextractor* mpIniORBextractor;
 
-    //BoW
+    //BoW 词袋模型相关
+    ///ORB特征字典
     ORBVocabulary* mpORBVocabulary;
+    ///当前系统运行的时候,关键帧所产生的数据库
     KeyFrameDatabase* mpKeyFrameDB;
 
     // Initalization (only for monocular)
+    /// 单目初始器
     Initializer* mpInitializer;
     bool mbSetInit;
 
     //Local Map
     KeyFrame* mpReferenceKF;
     std::vector<KeyFrame*> mvpLocalKeyFrames;
+    ///局部地图点的集合
     std::vector<MapPoint*> mvpLocalMapPoints;
     
     // System
+    ///指向系统实例的指针 
     System* mpSystem;
     
-    //Drawers
+    //Drawers  可视化查看器相关
+    ///查看器对象句柄
     Viewer* mpViewer;
+    ///帧绘制器句柄
     FrameDrawer* mpFrameDrawer;
+    ///地图绘制器句柄
     MapDrawer* mpMapDrawer;
-    bool bStepByStep;
 
-    //Atlas
+    //Map
+    ///(全局)地图句柄
     Atlas* mpAtlas;
 
-    //Calibration matrix
+    //Calibration matrix   相机的参数矩阵相关
+    ///相机的内参数矩阵
     cv::Mat mK;
+    ///相机的去畸变参数
     cv::Mat mDistCoef;
+    ///相机的基线长度 * 相机的焦距
     float mbf;
 
     //New KeyFrame rules (according to fps)
+    // 新建关键帧和重定位中用来判断最小最大时间间隔，和帧率有关
     int mMinFrames;
-    int mMaxFrames;
+    int mMaxFrames;         
 
     int mnFirstImuFrameId;
     int mnFramesToResetIMU;
@@ -266,17 +383,24 @@ protected:
     // Threshold close/far points
     // Points seen as close by the stereo/RGBD sensor are considered reliable
     // and inserted from just one frame. Far points requiere a match in two keyframes.
+    ///用于区分远点和近点的阈值. 近点认为可信度比较高;远点则要求在两个关键帧中得到匹配
     float mThDepth;
 
     // For RGB-D inputs only. For some datasets (e.g. TUM) the depthmap values are scaled.
+    ///深度缩放因子,链接深度值和具体深度值的参数.只对RGBD输入有效
     float mDepthMapFactor;
 
     //Current matches in frame
+    ///当前帧中的进行匹配的内点,将会被不同的函数反复使用
     int mnMatchesInliers;
 
     //Last Frame, KeyFrame and Relocalisation Info
+    // 上一关键帧
     KeyFrame* mpLastKeyFrame;
+
+    // 上一个关键帧的ID
     unsigned int mnLastKeyFrameId;
+    // 上一次重定位的那一帧的ID
     unsigned int mnLastRelocFrameId;
     double mTimeStampLost;
     double time_recently_lost;
@@ -292,8 +416,10 @@ protected:
     cv::Mat mVelocity;
 
     //Color order (true RGB, false BGR, ignored if grayscale)
+    ///RGB图像的颜色通道顺序
     bool mbRGB;
 
+    ///临时的地图点,用于提高双目和RGBD摄像头的帧间效果,用完之后就扔了
     list<MapPoint*> mlpTemporalPoints;
 
     //int nMapChangeIndex;
