@@ -6677,8 +6677,6 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
     // Set MapPoint vertices
     const int N = pFrame->N;
-    const int Nleft = pFrame->Nleft;
-    const bool bRight = (Nleft!=-1);
 
     vector<EdgeMonoOnlyPose*> vpEdgesMono;
     vector<EdgeStereoOnlyPose*> vpEdgesStereo;
@@ -6704,12 +6702,9 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                 cv::KeyPoint kpUn;
 
                 // Left monocular observation
-                if((!bRight && pFrame->mvuRight[i]<0) || i < Nleft)
+                if(( pFrame->mvuRight[i]<0) )
                 {
-                    if(i < Nleft) // pair left-right
-                        kpUn = pFrame->mvKeys[i];
-                    else
-                        kpUn = pFrame->mvKeysUn[i];
+                    kpUn = pFrame->mvKeysUn[i];
 
                     nInitialMonoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
@@ -6738,7 +6733,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                     vnIndexEdgeMono.push_back(i);
                 }
                 // Stereo observation
-                else if(!bRight)
+                else
                 {
                     nInitialStereoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
@@ -6770,35 +6765,6 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                 }
 
                 // Right monocular observation
-                if(bRight && i >= Nleft)
-                {
-                    nInitialMonoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
-
-                    kpUn = pFrame->mvKeysRight[i - Nleft];
-                    Eigen::Matrix<double,2,1> obs;
-                    obs << kpUn.pt.x, kpUn.pt.y;
-
-                    EdgeMonoOnlyPose* e = new EdgeMonoOnlyPose(pMP->GetWorldPos(),1);
-
-                    e->setVertex(0,VP);
-                    e->setMeasurement(obs);
-
-                    // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs);
-
-                    const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
-                    e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
-
-                    g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(thHuberMono);
-
-                    optimizer.addEdge(e);
-
-                    vpEdgesMono.push_back(e);
-                    vnIndexEdgeMono.push_back(i);
-                }
             }
         }
     }
@@ -7072,8 +7038,6 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
     // Set MapPoint vertices
     const int N = pFrame->N;
-    const int Nleft = pFrame->Nleft;
-    const bool bRight = (Nleft!=-1);
 
     vector<EdgeMonoOnlyPose*> vpEdgesMono;
     vector<EdgeStereoOnlyPose*> vpEdgesStereo;
@@ -7097,12 +7061,10 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
             {
                 cv::KeyPoint kpUn;
                 // Left monocular observation
-                if((!bRight && pFrame->mvuRight[i]<0) || i < Nleft)
+                if(( pFrame->mvuRight[i]<0))
                 {
-                    if(i < Nleft) // pair left-right
-                        kpUn = pFrame->mvKeys[i];
-                    else
-                        kpUn = pFrame->mvKeysUn[i];
+
+                    kpUn = pFrame->mvKeysUn[i];
 
                     nInitialMonoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
@@ -7131,7 +7093,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     vnIndexEdgeMono.push_back(i);
                 }
                 // Stereo observation
-                else if(!bRight)
+                else
                 {
                     nInitialStereoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
@@ -7160,37 +7122,6 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
                     vpEdgesStereo.push_back(e);
                     vnIndexEdgeStereo.push_back(i);
-                }
-
-                // Right monocular observation
-                if(bRight && i >= Nleft)
-                {
-                    nInitialMonoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
-
-                    kpUn = pFrame->mvKeysRight[i - Nleft];
-                    Eigen::Matrix<double,2,1> obs;
-                    obs << kpUn.pt.x, kpUn.pt.y;
-
-                    EdgeMonoOnlyPose* e = new EdgeMonoOnlyPose(pMP->GetWorldPos(),1);
-
-                    e->setVertex(0,VP);
-                    e->setMeasurement(obs);
-
-                    // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs);
-
-                    const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
-                    e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
-
-                    g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(thHuberMono);
-
-                    optimizer.addEdge(e);
-
-                    vpEdgesMono.push_back(e);
-                    vnIndexEdgeMono.push_back(i);
                 }
             }
         }

@@ -434,18 +434,11 @@ void MapPoint::UpdateNormalAndDepth()
         tuple<int,int> indexes = mit -> second;
         int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
 
-        if(leftIndex != -1){
             cv::Mat Owi = pKF->GetCameraCenter();
             cv::Mat normali = mWorldPos - Owi;
             normal = normal + normali/cv::norm(normali);
             n++;
-        }
-        if(rightIndex != -1){
-            cv::Mat Owi = pKF->GetRightCameraCenter();
-            cv::Mat normali = mWorldPos - Owi;
-            normal = normal + normali/cv::norm(normali);
-            n++;
-        }
+
     }
 
     cv::Mat PC = Pos - pRefKF->GetCameraCenter();

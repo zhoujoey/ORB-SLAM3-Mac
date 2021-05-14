@@ -22,7 +22,7 @@ KeyFrame::KeyFrame():
         mvInvLevelSigma2(0), mnMinX(0), mnMinY(0), mnMaxX(0),
         mnMaxY(0), /*mK(NULL),*/  mPrevKF(static_cast<KeyFrame*>(NULL)), mNextKF(static_cast<KeyFrame*>(NULL)), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
         mbToBeErased(false), mbBad(false), mHalfBaseline(0), mbCurrentPlaceRecognition(false), mbHasHessian(false), mnMergeCorrectedForKF(0),
-        NRight(0), mnNumberOfOpt(0)
+        mnNumberOfOpt(0)
 {
 
 }
@@ -43,12 +43,8 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mDistCoef(F.mDistCoef), mbNotErase(false), 
     mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mbCurrentPlaceRecognition(false), mbHasHessian(false), mnMergeCorrectedForKF(0),
     mpCamera(F.mpCamera), 
-    mTlr(F.mTlr.clone()),
-    mvKeysRight(F.mvKeysRight), NRight(F.Nright), mTrl(F.mTrl), mnNumberOfOpt(0)
+    mvKeysRight(F.mvKeysRight), mTrl(F.mTrl), mnNumberOfOpt(0)
 {
-
-    imgLeft = F.imgLeft.clone();
-    imgRight = F.imgRight.clone();
 
     mnId=nNextId++;
 
@@ -717,7 +713,7 @@ void KeyFrame::EraseConnection(KeyFrame* pKF)
 }
 
 
-vector<size_t> KeyFrame::GetFeaturesInArea(const float &x, const float &y, const float &r, const bool bRight) const
+vector<size_t> KeyFrame::GetFeaturesInArea(const float &x, const float &y, const float &r) const
 {
     vector<size_t> vIndices;
     vIndices.reserve(N);
@@ -745,7 +741,7 @@ vector<size_t> KeyFrame::GetFeaturesInArea(const float &x, const float &y, const
     {
         for(int iy = nMinCellY; iy<=nMaxCellY; iy++)
         {
-            const vector<size_t> vCell = (!bRight) ? mGrid[ix][iy] : mGridRight[ix][iy];
+            const vector<size_t> vCell = mGrid[ix][iy];
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
                 const cv::KeyPoint &kpUn = mvKeysUn[vCell[j]];
@@ -852,94 +848,6 @@ void KeyFrame::UpdateMap(Map* pMap)
 {
     unique_lock<mutex> lock(mMutexMap);
     mpMap = pMap;
-}
-
-cv::Mat KeyFrame::GetRightPose() {
-    unique_lock<mutex> lock(mMutexPose);
-
-    cv::Mat Rrl = mTlr.rowRange(0,3).colRange(0,3).t();
-    cv::Mat Rlw = Tcw.rowRange(0,3).colRange(0,3).clone();
-    cv::Mat Rrw = Rrl * Rlw;
-
-    cv::Mat tlw = Tcw.rowRange(0,3).col(3).clone();
-    cv::Mat trl = - Rrl * mTlr.rowRange(0,3).col(3);
-
-    cv::Mat trw = Rrl * tlw + trl;
-
-    cv::Mat Trw;
-    cv::hconcat(Rrw,trw,Trw);
-
-    return Trw.clone();
-}
-
-cv::Mat KeyFrame::GetRightPoseInverse() {
-    unique_lock<mutex> lock(mMutexPose);
-    cv::Mat Rrl = mTlr.rowRange(0,3).colRange(0,3).t();
-    cv::Mat Rlw = Tcw.rowRange(0,3).colRange(0,3).clone();
-    cv::Mat Rwr = (Rrl * Rlw).t();
-
-    cv::Mat Rwl = Tcw.rowRange(0,3).colRange(0,3).t();
-    cv::Mat tlr = mTlr.rowRange(0,3).col(3);
-    cv::Mat twl = GetCameraCenter();
-
-    cv::Mat twr = Rwl * tlr + twl;
-
-    cv::Mat Twr;
-    cv::hconcat(Rwr,twr,Twr);
-
-    return Twr.clone();
-}
-
-cv::Mat KeyFrame::GetRightPoseInverseH() {
-    unique_lock<mutex> lock(mMutexPose);
-    cv::Mat Rrl = mTlr.rowRange(0,3).colRange(0,3).t();
-    cv::Mat Rlw = Tcw.rowRange(0,3).colRange(0,3).clone();
-    cv::Mat Rwr = (Rrl * Rlw).t();
-
-    cv::Mat Rwl = Tcw.rowRange(0,3).colRange(0,3).t();
-    cv::Mat tlr = mTlr.rowRange(0,3).col(3);
-    cv::Mat twl = Ow.clone();
-
-    cv::Mat twr = Rwl * tlr + twl;
-
-    cv::Mat Twr;
-    cv::hconcat(Rwr,twr,Twr);
-    cv::Mat h(1,4,CV_32F,cv::Scalar(0.0f)); h.at<float>(3) = 1.0f;
-    cv::vconcat(Twr,h,Twr);
-
-    return Twr.clone();
-}
-
-cv::Mat KeyFrame::GetRightCameraCenter() {
-    unique_lock<mutex> lock(mMutexPose);
-    cv::Mat Rwl = Tcw.rowRange(0,3).colRange(0,3).t();
-    cv::Mat tlr = mTlr.rowRange(0,3).col(3);
-    cv::Mat twl = Ow.clone();
-
-    cv::Mat twr = Rwl * tlr + twl;
-
-    return twr.clone();
-}
-
-cv::Mat KeyFrame::GetRightRotation() {
-    unique_lock<mutex> lock(mMutexPose);
-    cv::Mat Rrl = mTlr.rowRange(0,3).colRange(0,3).t();
-    cv::Mat Rlw = Tcw.rowRange(0,3).colRange(0,3).clone();
-    cv::Mat Rrw = Rrl * Rlw;
-
-    return Rrw.clone();
-
-}
-
-cv::Mat KeyFrame::GetRightTranslation() {
-    unique_lock<mutex> lock(mMutexPose);
-    cv::Mat Rrl = mTlr.rowRange(0,3).colRange(0,3).t();
-    cv::Mat tlw = Tcw.rowRange(0,3).col(3).clone();
-    cv::Mat trl = - Rrl * mTlr.rowRange(0,3).col(3);
-
-    cv::Mat trw = Rrl * tlw + trl;
-
-    return trw.clone();
 }
 
 void KeyFrame::SetORBVocabulary(ORBVocabulary* pORBVoc)

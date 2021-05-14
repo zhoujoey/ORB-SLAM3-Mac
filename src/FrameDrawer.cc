@@ -244,11 +244,10 @@ cv::Mat FrameDrawer::DrawRightFrame()
         mnTrackedVO=0;
         const float r = 5;
         const int n = mvCurrentKeysRight.size();
-        const int Nleft = mvCurrentKeys.size();
 
         for(int i=0;i<n;i++)
         {
-            if(vbVO[i + Nleft] || vbMap[i + Nleft])
+            if(vbVO[i ] || vbMap[i ])
             {
                 cv::Point2f pt1,pt2;
                 pt1.x=mvCurrentKeysRight[i].pt.x-r;
@@ -257,7 +256,7 @@ cv::Mat FrameDrawer::DrawRightFrame()
                 pt2.y=mvCurrentKeysRight[i].pt.y+r;
 
                 // This is a match to a MapPoint in the map
-                if(vbMap[i + Nleft])
+                if(vbMap[i])
                 {
                     cv::rectangle(im,pt1,pt2,cv::Scalar(0,255,0));
                     cv::circle(im,mvCurrentKeysRight[i].pt,2,cv::Scalar(0,255,0),-1);

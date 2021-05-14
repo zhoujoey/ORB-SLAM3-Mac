@@ -433,8 +433,6 @@ protected:
 
     GeometricCamera* mpCamera;
 
-    cv::Mat mTlr;
-
 public:
     cv::Mat mImRight;
 };

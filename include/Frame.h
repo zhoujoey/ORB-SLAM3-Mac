@@ -171,7 +171,7 @@ public:
      * @param[in] maxLevel              最大金字塔层级
      * @return vector<size_t>           返回搜索到的候选匹配点id
      */
-    vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1, const bool bRight = false) const;
+    vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1) const;
 
     // Search a match for each keypoint in the left image to a keypoint in the right image.
     // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
@@ -443,17 +443,10 @@ private:
 public:
     GeometricCamera* mpCamera;
 
-    //Number of KeyPoints extracted in the left and right images
-    int Nleft, Nright;
-    //Number of Non Lapping Keypoints
-    int monoLeft, monoRight;
-
     //Grid for the right image
     std::vector<std::size_t> mGridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
-    cv::Mat mTlr, mRlr, mtlr, mTrl;
-
-    cv::Mat imgLeft, imgRight;
+    cv::Mat mTrl;
 
 };
 

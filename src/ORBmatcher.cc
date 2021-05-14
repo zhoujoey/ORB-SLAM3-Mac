@@ -1139,7 +1139,7 @@ int ORBmatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
         // Search in a radius
         const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
 
-        const vector<size_t> vIndices = pKF->GetFeaturesInArea(uv.x,uv.y,radius,bRight);
+        const vector<size_t> vIndices = pKF->GetFeaturesInArea(uv.x,uv.y,radius);
 
         if(vIndices.empty())
             continue;
