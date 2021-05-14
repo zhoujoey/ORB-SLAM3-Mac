@@ -81,25 +81,13 @@ MapPoint::MapPoint(const cv::Mat &Pos, Map* pMap, Frame* pFrame, const int &idxF
     mnFound(1), mbBad(false), mpReplaced(NULL), mpMap(pMap), mnOriginMapId(pMap->GetId())
 {
     Pos.copyTo(mWorldPos);
-    cv::Mat Ow;
-    if(pFrame -> Nleft == -1 || idxF < pFrame -> Nleft){
-        Ow = pFrame->GetCameraCenter();
-    }
-    else{
-        cv::Mat Rwl = pFrame -> mRwc;
-        cv::Mat tlr = pFrame -> mTlr.col(3);
-        cv::Mat twl = pFrame -> mOw;
-
-        Ow = Rwl * tlr + twl;
-    }
+    cv::Mat Ow = pFrame->GetCameraCenter();
     mNormalVector = mWorldPos - Ow;
     mNormalVector = mNormalVector/cv::norm(mNormalVector);
 
     cv::Mat PC = Pos - Ow;
     const float dist = cv::norm(PC);
-    const int level = (pFrame -> Nleft == -1) ? pFrame->mvKeysUn[idxF].octave
-                                              : (idxF < pFrame -> Nleft) ? pFrame->mvKeys[idxF].octave
-                                                                         : pFrame -> mvKeysRight[idxF].octave;
+    const int level =  pFrame->mvKeysUn[idxF].octave;
     const float levelScaleFactor =  pFrame->mvScaleFactors[level];
     const int nLevels = pFrame->mnScaleLevels;
 
@@ -150,12 +138,7 @@ void MapPoint::AddObservation(KeyFrame* pKF, int idx)
         indexes = tuple<int,int>(-1,-1);
     }
 
-    if(pKF -> NLeft != -1 && idx >= pKF -> NLeft){
-        get<1>(indexes) = idx;
-    }
-    else{
-        get<0>(indexes) = idx;
-    }
+    get<0>(indexes) = idx;
 
     mObservations[pKF]=indexes;
 
@@ -471,15 +454,7 @@ void MapPoint::UpdateNormalAndDepth()
     tuple<int ,int> indexes = observations[pRefKF];
     int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
     int level;
-    if(pRefKF -> NLeft == -1){
-        level = pRefKF->mvKeysUn[leftIndex].octave;
-    }
-    else if(leftIndex != -1){
-        level = pRefKF -> mvKeys[leftIndex].octave;
-    }
-    else{
-        level = pRefKF -> mvKeysRight[rightIndex - pRefKF -> NLeft].octave;
-    }
+    level = pRefKF->mvKeysUn[leftIndex].octave;
 
     //const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;
     const float levelScaleFactor =  pRefKF->mvScaleFactors[level];

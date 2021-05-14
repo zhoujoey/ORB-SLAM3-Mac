@@ -22,7 +22,7 @@ KeyFrame::KeyFrame():
         mvInvLevelSigma2(0), mnMinX(0), mnMinY(0), mnMaxX(0),
         mnMaxY(0), /*mK(NULL),*/  mPrevKF(static_cast<KeyFrame*>(NULL)), mNextKF(static_cast<KeyFrame*>(NULL)), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
         mbToBeErased(false), mbBad(false), mHalfBaseline(0), mbCurrentPlaceRecognition(false), mbHasHessian(false), mnMergeCorrectedForKF(0),
-        NLeft(0),NRight(0), mnNumberOfOpt(0)
+        NRight(0), mnNumberOfOpt(0)
 {
 
 }
@@ -43,8 +43,8 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mDistCoef(F.mDistCoef), mbNotErase(false), 
     mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mbCurrentPlaceRecognition(false), mbHasHessian(false), mnMergeCorrectedForKF(0),
     mpCamera(F.mpCamera), 
-    mvLeftToRightMatch(F.mvLeftToRightMatch),mvRightToLeftMatch(F.mvRightToLeftMatch),mTlr(F.mTlr.clone()),
-    mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.mTrl), mnNumberOfOpt(0)
+    mTlr(F.mTlr.clone()),
+    mvKeysRight(F.mvKeysRight), NRight(F.Nright), mTrl(F.mTrl), mnNumberOfOpt(0)
 {
 
     imgLeft = F.imgLeft.clone();
@@ -53,16 +53,12 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mnId=nNextId++;
 
     mGrid.resize(mnGridCols);
-    if(F.Nleft != -1)  mGridRight.resize(mnGridCols);
     for(int i=0; i<mnGridCols;i++)
     {
         mGrid[i].resize(mnGridRows);
-        if(F.Nleft != -1) mGridRight[i].resize(mnGridRows);
-        for(int j=0; j<mnGridRows; j++){
+        for(int j=0; j<mnGridRows; j++)
+		{
             mGrid[i][j] = F.mGrid[i][j];
-            if(F.Nleft != -1){
-                mGridRight[i][j] = F.mGridRight[i][j];
-            }
         }
     }
 
@@ -463,27 +459,6 @@ void KeyFrame::UpdateConnections(bool upParent)
 
         if(mbFirstConnection && mnId!=mpMap->GetInitKFid())
         {
-            /*if(!mpParent || mpParent->GetParent() != this)
-            {
-                KeyFrame* pBestParent = static_cast<KeyFrame*>(NULL);
-                for(KeyFrame* pKFi : mvpOrderedConnectedKeyFrames)
-                {
-                    if(pKFi->GetParent() || pKFi->mnId == mpMap->GetInitKFid())
-                    {
-                        pBestParent = pKFi;
-                        break;
-                    }
-                }
-                if(!pBestParent)
-                {
-                    cout << "It can't be a covisible KF without Parent" << endl << endl;
-                    return;
-                }
-                mpParent = pBestParent;
-                mpParent->AddChild(this);
-                mbFirstConnection = false;
-            }*/
-            // cout << "udt.conn.id: " << mnId << endl;
             mpParent = mvpOrderedConnectedKeyFrames.front();
             mpParent->AddChild(this);
             mbFirstConnection = false;
@@ -507,13 +482,6 @@ void KeyFrame::EraseChild(KeyFrame *pKF)
 void KeyFrame::ChangeParent(KeyFrame *pKF)
 {
     unique_lock<mutex> lockCon(mMutexConnections);
-//    if(!mpParent && mpParent != this)
-//        mpParent->EraseChild(this);
-    if(pKF == this)
-    {
-        cout << "ERROR: Change parent KF, the parent and child are the same KF" << endl;
-        throw std::invalid_argument("The parent and child can not be the same");
-    }
 
     mpParent = pKF;
     pKF->AddChild(this);
@@ -780,9 +748,7 @@ vector<size_t> KeyFrame::GetFeaturesInArea(const float &x, const float &y, const
             const vector<size_t> vCell = (!bRight) ? mGrid[ix][iy] : mGridRight[ix][iy];
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const cv::KeyPoint &kpUn = (NLeft == -1) ? mvKeysUn[vCell[j]]
-                                                         : (!bRight) ? mvKeys[vCell[j]]
-                                                                     : mvKeysRight[vCell[j]];
+                const cv::KeyPoint &kpUn = mvKeysUn[vCell[j]];
                 const float distx = kpUn.pt.x-x;
                 const float disty = kpUn.pt.y-y;
 
@@ -886,108 +852,6 @@ void KeyFrame::UpdateMap(Map* pMap)
 {
     unique_lock<mutex> lock(mMutexMap);
     mpMap = pMap;
-}
-
-bool KeyFrame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v)
-{
-
-    // 3D in absolute coordinates
-    cv::Mat P = pMP->GetWorldPos();
-    cv::Mat Rcw = Tcw.rowRange(0, 3).colRange(0, 3);
-    cv::Mat tcw = Tcw.rowRange(0, 3).col(3);
-
-    // 3D in camera coordinates
-    cv::Mat Pc = Rcw*P+tcw;
-    float &PcX = Pc.at<float>(0);
-    float &PcY= Pc.at<float>(1);
-    float &PcZ = Pc.at<float>(2);
-
-    // Check positive depth
-    if(PcZ<0.0f)
-    {
-        cout << "Negative depth: " << PcZ << endl;
-        return false;
-    }
-
-    // Project in image and check it is not outside
-    float invz = 1.0f/PcZ;
-    u=fx*PcX*invz+cx;
-    v=fy*PcY*invz+cy;
-
-    // cout << "c";
-
-    if(u<mnMinX || u>mnMaxX)
-        return false;
-    if(v<mnMinY || v>mnMaxY)
-        return false;
-
-    float x = (u - cx) * invfx;
-    float y = (v - cy) * invfy;
-    float r2 = x * x + y * y;
-    float k1 = mDistCoef.at<float>(0);
-    float k2 = mDistCoef.at<float>(1);
-    float p1 = mDistCoef.at<float>(2);
-    float p2 = mDistCoef.at<float>(3);
-    float k3 = 0;
-    if(mDistCoef.total() == 5)
-    {
-        k3 = mDistCoef.at<float>(4);
-    }
-
-    // Radial distorsion
-    float x_distort = x * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
-    float y_distort = y * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
-
-    // Tangential distorsion
-    x_distort = x_distort + (2 * p1 * x * y + p2 * (r2 + 2 * x * x));
-    y_distort = y_distort + (p1 * (r2 + 2 * y * y) + 2 * p2 * x * y);
-
-    float u_distort = x_distort * fx + cx;
-    float v_distort = y_distort * fy + cy;
-
-    u = u_distort;
-    v = v_distort;
-
-    kp = cv::Point2f(u, v);
-
-    return true;
-}
-
-bool KeyFrame::ProjectPointUnDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v)
-{
-
-    // 3D in absolute coordinates
-    cv::Mat P = pMP->GetWorldPos();
-    cv::Mat Rcw = Tcw.rowRange(0, 3).colRange(0, 3);
-    cv::Mat tcw = Tcw.rowRange(0, 3).col(3);
-    // 3D in camera coordinates
-    cv::Mat Pc = Rcw*P+tcw;
-    float &PcX = Pc.at<float>(0);
-    float &PcY= Pc.at<float>(1);
-    float &PcZ = Pc.at<float>(2);
-
-    // Check positive depth
-    if(PcZ<0.0f)
-    {
-        cout << "Negative depth: " << PcZ << endl;
-        return false;
-    }
-
-    // Project in image and check it is not outside
-    const float invz = 1.0f/PcZ;
-    u=fx*PcX*invz+cx;
-    v=fy*PcY*invz+cy;
-
-    // cout << "c";
-
-    if(u<mnMinX || u>mnMaxX)
-        return false;
-    if(v<mnMinY || v>mnMaxY)
-        return false;
-
-    kp = cv::Point2f(u, v);
-
-    return true;
 }
 
 cv::Mat KeyFrame::GetRightPose() {

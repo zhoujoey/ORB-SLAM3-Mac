@@ -77,9 +77,6 @@ protected:
     vector<cv::KeyPoint> mvOutlierKeys;
     vector<MapPoint*> mvpOutlierMPs;
 
-    map<long unsigned int, cv::Point2f> mmProjectPoints;
-    map<long unsigned int, cv::Point2f> mmMatchedInImage;
-
 };
 
 } //namespace ORB_SLAM

@@ -1,21 +1,3 @@
-/**
-* This file is part of ORB-SLAM3
-*
-* Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-*
-* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-* License as published by the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
-* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #include "Frame.h"
 
 #include "G2oTypes.h"
@@ -37,9 +19,6 @@ bool Frame::mbInitialComputations=true;
 float Frame::cx, Frame::cy, Frame::fx, Frame::fy, Frame::invfx, Frame::invfy;
 float Frame::mnMinX, Frame::mnMinY, Frame::mnMaxX, Frame::mnMaxY;
 float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
-
-//For stereo fisheye matching
-cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
 Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false)
 {
@@ -92,19 +71,15 @@ Frame::Frame(const Frame &frame)
 	 Nright(frame.Nright),
      monoLeft(frame.monoLeft), 
 	 monoRight(frame.monoRight), 
-	 mvLeftToRightMatch(frame.mvLeftToRightMatch),
-     mvRightToLeftMatch(frame.mvRightToLeftMatch), 
      mTlr(frame.mTlr.clone()), 
 	 mRlr(frame.mRlr.clone()), 
 	 mtlr(frame.mtlr.clone()), 
 	 mTrl(frame.mTrl.clone())
 {
     for(int i=0;i<FRAME_GRID_COLS;i++)
-        for(int j=0; j<FRAME_GRID_ROWS; j++){
+        for(int j=0; j<FRAME_GRID_ROWS; j++)
+		{
             mGrid[i][j]=frame.mGrid[i][j];
-            if(frame.Nleft > 0){
-                mGridRight[i][j] = frame.mGridRight[i][j];
-            }
         }
 
     if(!frame.mTcw.empty())
@@ -113,8 +88,6 @@ Frame::Frame(const Frame &frame)
     if(!frame.mVw.empty())
         mVw = frame.mVw.clone();
 
-    mmProjectPoints = frame.mmProjectPoints;
-    mmMatchedInImage = frame.mmMatchedInImage;
 }
 
 
@@ -153,9 +126,6 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
 
     mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
 
-    mmProjectPoints.clear();// = map<long unsigned int, cv::Point2f>(N, static_cast<cv::Point2f>(NULL));
-    mmMatchedInImage.clear();
-
     mvbOutlier = vector<bool>(N,false);
 
     // This is done only for the first Frame (or after a change in the calibration)
@@ -181,8 +151,6 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     //Set no stereo fisheye information
     Nleft = -1;
     Nright = -1;
-    mvLeftToRightMatch = vector<int>(0);
-    mvRightToLeftMatch = vector<int>(0);
     mTlr = cv::Mat(3,4,CV_32F);
     mTrl = cv::Mat(3,4,CV_32F);
     monoLeft = -1;
@@ -380,77 +348,6 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     pMP->mTrackViewCos = viewCos;
 
     return true;
-}
-
-bool Frame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v)
-{
-
-    // 3D in absolute coordinates
-    cv::Mat P = pMP->GetWorldPos();
-
-    // 3D in camera coordinates
-    const cv::Mat Pc = mRcw*P+mtcw;
-    const float &PcX = Pc.at<float>(0);
-    const float &PcY= Pc.at<float>(1);
-    const float &PcZ = Pc.at<float>(2);
-
-    // Check positive depth
-    if(PcZ<0.0f)
-    {
-        cout << "Negative depth: " << PcZ << endl;
-        return false;
-    }
-
-    // Project in image and check it is not outside
-    const float invz = 1.0f/PcZ;
-    u=fx*PcX*invz+cx;
-    v=fy*PcY*invz+cy;
-
-    // cout << "c";
-
-    if(u<mnMinX || u>mnMaxX)
-        return false;
-    if(v<mnMinY || v>mnMaxY)
-        return false;
-
-    float u_distort, v_distort;
-
-    float x = (u - cx) * invfx;
-    float y = (v - cy) * invfy;
-    float r2 = x * x + y * y;
-    float k1 = mDistCoef.at<float>(0);
-    float k2 = mDistCoef.at<float>(1);
-    float p1 = mDistCoef.at<float>(2);
-    float p2 = mDistCoef.at<float>(3);
-    float k3 = 0;
-    if(mDistCoef.total() == 5)
-    {
-        k3 = mDistCoef.at<float>(4);
-    }
-
-    // Radial distorsion
-    float x_distort = x * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
-    float y_distort = y * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
-
-    // Tangential distorsion
-    x_distort = x_distort + (2 * p1 * x * y + p2 * (r2 + 2 * x * x));
-    y_distort = y_distort + (p1 * (r2 + 2 * y * y) + 2 * p2 * x * y);
-
-    u_distort = x_distort * fx + cx;
-    v_distort = y_distort * fy + cy;
-
-
-    u = u_distort;
-    v = v_distort;
-
-    kp = cv::Point2f(u, v);
-
-    return true;
-}
-
-cv::Mat Frame::inRefCoordinates(cv::Mat pCw)
-{
-    return mRcw*pCw+mtcw;
 }
 
 vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel, const int maxLevel, const bool bRight) const
@@ -834,81 +731,6 @@ void Frame::setIntegrated()
 {
     unique_lock<std::mutex> lock(*mpMutexImu);
     mbImuPreintegrated = true;
-}
-
-
-bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight) {
-    // 3D in absolute coordinates
-    cv::Mat P = pMP->GetWorldPos();
-
-    cv::Mat mR, mt, twc;
-    if(bRight){
-        cv::Mat Rrl = mTrl.colRange(0,3).rowRange(0,3);
-        cv::Mat trl = mTrl.col(3);
-        mR = Rrl * mRcw;
-        mt = Rrl * mtcw + trl;
-        twc = mRwc * mTlr.rowRange(0,3).col(3) + mOw;
-    }
-    else{
-        mR = mRcw;
-        mt = mtcw;
-        twc = mOw;
-    }
-
-    // 3D in camera coordinates
-    cv::Mat Pc = mR*P+mt;
-    const float Pc_dist = cv::norm(Pc);
-    const float &PcZ = Pc.at<float>(2);
-
-    // Check positive depth
-    if(PcZ<0.0f)
-        return false;
-
-    // Project in image and check it is not outside
-    cv::Point2f uv;
-    uv = mpCamera->project(Pc);
-
-    if(uv.x<mnMinX || uv.x>mnMaxX)
-        return false;
-    if(uv.y<mnMinY || uv.y>mnMaxY)
-        return false;
-
-    // Check distance is in the scale invariance region of the MapPoint
-    const float maxDistance = pMP->GetMaxDistanceInvariance();
-    const float minDistance = pMP->GetMinDistanceInvariance();
-    const cv::Mat PO = P-twc;
-    const float dist = cv::norm(PO);
-
-    if(dist<minDistance || dist>maxDistance)
-        return false;
-
-    // Check viewing angle
-    cv::Mat Pn = pMP->GetNormal();
-
-    const float viewCos = PO.dot(Pn)/dist;
-
-    if(viewCos<viewingCosLimit)
-        return false;
-
-    // Predict scale in the image
-    const int nPredictedLevel = pMP->PredictScale(dist,this);
-
-    if(bRight){
-        pMP->mTrackProjXR = uv.x;
-        pMP->mTrackProjYR = uv.y;
-        pMP->mnTrackScaleLevelR= nPredictedLevel;
-        pMP->mTrackViewCosR = viewCos;
-        pMP->mTrackDepthR = Pc_dist;
-    }
-    else{
-        pMP->mTrackProjX = uv.x;
-        pMP->mTrackProjY = uv.y;
-        pMP->mnTrackScaleLevel= nPredictedLevel;
-        pMP->mTrackViewCos = viewCos;
-        pMP->mTrackDepth = Pc_dist;
-    }
-
-    return true;
 }
 
 } //namespace ORB_SLAM

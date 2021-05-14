@@ -1721,10 +1721,6 @@ void Tracking::SearchLocalPoints()
             // 只有在视野范围内的地图点才参与之后的投影匹配
             nToMatch++;
         }
-        if(pMP->mbTrackInView)
-        {
-            mCurrentFrame.mmProjectPoints[pMP->mnId] = cv::Point2f(pMP->mTrackProjX, pMP->mTrackProjY);
-        }
     }
 
     if(nToMatch>0)

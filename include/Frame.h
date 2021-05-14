@@ -61,8 +61,6 @@ public:
 
     Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
-    // Destructor
-    // ~Frame();
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     /**
@@ -151,10 +149,6 @@ public:
      * @return false                        地图点不合格，抛弃
      */
     bool isInFrustum(MapPoint* pMP, float viewingCosLimit);
-
-    bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
-
-    cv::Mat inRefCoordinates(cv::Mat pCw);
 
     /**
      * @brief 计算某个特征点所在网格的网格坐标，如果找到特征点所在的网格坐标，记录在nGridPosX,nGridPosY里，返回true，没找到返回false
@@ -407,10 +401,6 @@ public:
     */ 
     static bool mbInitialComputations;
 
-    map<long unsigned int, cv::Point2f> mmProjectPoints;
-    map<long unsigned int, cv::Point2f> mmMatchedInImage;
-
-
 private:
 
     // Undistort keypoints given OpenCV distortion parameters.
@@ -458,18 +448,10 @@ public:
     //Number of Non Lapping Keypoints
     int monoLeft, monoRight;
 
-    //For stereo matching
-    std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
-
-    //For stereo fisheye matching
-    static cv::BFMatcher BFmatcher;
-
     //Grid for the right image
     std::vector<std::size_t> mGridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
 
     cv::Mat mTlr, mRlr, mtlr, mTrl;
-
-    bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
 
     cv::Mat imgLeft, imgRight;
 

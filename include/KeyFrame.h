@@ -355,9 +355,6 @@ public:
     cv::Mat GetAccBias();
     IMU::Bias GetImuBias();
 
-    bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
-    bool ProjectPointUnDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
-
     void SetORBVocabulary(ORBVocabulary* pORBVoc);
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
 
@@ -553,9 +550,6 @@ protected:
 public:
     GeometricCamera* mpCamera;
 
-    //Indexes of stereo observations correspondences
-    std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
-
     //Transformation matrix between cameras in stereo fisheye
     cv::Mat mTlr;
     cv::Mat mTrl;
@@ -563,7 +557,7 @@ public:
     //KeyPoints in the right image (for stereo fisheye, coordinates are needed)
     const std::vector<cv::KeyPoint> mvKeysRight;
 
-    const int NLeft, NRight;
+    const int NRight;
 
     std::vector< std::vector <std::vector<size_t> > > mGridRight;
 

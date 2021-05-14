@@ -474,20 +474,12 @@ void LocalMapping::CreateNewMapPoints()
             const int &idx1 = vMatchedIndices[ikp].first;
             const int &idx2 = vMatchedIndices[ikp].second;
 
-            const cv::KeyPoint &kp1 = (mpCurrentKeyFrame -> NLeft == -1) ? mpCurrentKeyFrame->mvKeysUn[idx1]
-                                                                         : (idx1 < mpCurrentKeyFrame -> NLeft) ? mpCurrentKeyFrame -> mvKeys[idx1]
-                                                                                                               : mpCurrentKeyFrame -> mvKeysRight[idx1 - mpCurrentKeyFrame -> NLeft];
+            const cv::KeyPoint &kp1 = mpCurrentKeyFrame->mvKeysUn[idx1];
             const float kp1_ur=mpCurrentKeyFrame->mvuRight[idx1];
-            const bool bRight1 = (mpCurrentKeyFrame -> NLeft == -1 || idx1 < mpCurrentKeyFrame -> NLeft) ? false
-                                                                               : true;
 
-            const cv::KeyPoint &kp2 = (pKF2 -> NLeft == -1) ? pKF2->mvKeysUn[idx2]
-                                                            : (idx2 < pKF2 -> NLeft) ? pKF2 -> mvKeys[idx2]
-                                                                                     : pKF2 -> mvKeysRight[idx2 - pKF2 -> NLeft];
+            const cv::KeyPoint &kp2 = pKF2->mvKeysUn[idx2];
 
             const float kp2_ur = pKF2->mvuRight[idx2];
-            const bool bRight2 = (pKF2 -> NLeft == -1 || idx2 < pKF2 -> NLeft) ? false
-                                                                               : true;
 
             // Check parallax between rays
             cv::Mat xn1 = pCamera1->unprojectMat(kp1.pt);
@@ -667,7 +659,6 @@ void LocalMapping::SearchInNeighbors()
         KeyFrame* pKFi = *vit;
 
         matcher.Fuse(pKFi,vpMapPointMatches);
-        if(pKFi->NLeft != -1) matcher.Fuse(pKFi,vpMapPointMatches,true);
     }
 
     if (mbAbortBA)
@@ -696,7 +687,6 @@ void LocalMapping::SearchInNeighbors()
     }
 
     matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates);
-    if(mpCurrentKeyFrame->NLeft != -1) matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates,true);
 
 
     // Update points
@@ -880,9 +870,7 @@ void LocalMapping::KeyFrameCulling()
                     nMPs++;
                     if(pMP->Observations()>thObs)
                     {
-                        const int &scaleLevel = (pKF -> NLeft == -1) ? pKF->mvKeysUn[i].octave
-                                                                     : (i < pKF -> NLeft) ? pKF -> mvKeys[i].octave
-                                                                                          : pKF -> mvKeysRight[i].octave;
+                        const int &scaleLevel = pKF->mvKeysUn[i].octave;
                         const map<KeyFrame*, tuple<int,int>> observations = pMP->GetObservations();
                         int nObs=0;
                         for(map<KeyFrame*, tuple<int,int>>::const_iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
@@ -893,18 +881,7 @@ void LocalMapping::KeyFrameCulling()
                             tuple<int,int> indexes = mit->second;
                             int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
                             int scaleLeveli = -1;
-                            if(pKFi -> NLeft == -1)
-                                scaleLeveli = pKFi->mvKeysUn[leftIndex].octave;
-                            else {
-                                if (leftIndex != -1) {
-                                    scaleLeveli = pKFi->mvKeys[leftIndex].octave;
-                                }
-                                if (rightIndex != -1) {
-                                    int rightLevel = pKFi->mvKeysRight[rightIndex - pKFi->NLeft].octave;
-                                    scaleLeveli = (scaleLeveli == -1 || scaleLeveli > rightLevel) ? rightLevel
-                                                                                                  : scaleLeveli;
-                                }
-                            }
+                            scaleLeveli = pKFi->mvKeysUn[leftIndex].octave;
 
                             if(scaleLeveli<=scaleLevel+1)
                             {
