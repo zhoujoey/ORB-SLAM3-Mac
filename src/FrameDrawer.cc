@@ -9,7 +9,7 @@
 namespace ORB_SLAM3
 {
 
-FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
+FrameDrawer::FrameDrawer(Atlas* pAtlas):mpAtlas(pAtlas)
 {
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
@@ -322,14 +322,7 @@ void FrameDrawer::Update(Tracking *pTracker)
     pTracker->mImGray.copyTo(mIm);
     mvCurrentKeys=pTracker->mCurrentFrame.mvKeys;
 
-    if(both){
-        mvCurrentKeysRight = pTracker->mCurrentFrame.mvKeysRight;
-        pTracker->mImRight.copyTo(mImRight);
-        N = mvCurrentKeys.size() + mvCurrentKeysRight.size();
-    }
-    else{
-        N = mvCurrentKeys.size();
-    }
+    N = mvCurrentKeys.size();
 
     mvbVO = vector<bool>(N,false);
     mvbMap = vector<bool>(N,false);

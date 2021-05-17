@@ -263,11 +263,6 @@ KeyFrameDatabase* Atlas::GetKeyFrameDatabase()
     return mpKeyFrameDB;
 }
 
-void Atlas::SetORBVocabulary(ORBVocabulary* pORBVoc)
-{
-    mpORBVocabulary = pORBVoc;
-}
-
 ORBVocabulary* Atlas::GetORBVocabulary()
 {
     return mpORBVocabulary;

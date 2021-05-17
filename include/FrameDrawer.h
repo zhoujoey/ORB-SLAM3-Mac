@@ -49,8 +49,6 @@ public:
     cv::Mat DrawFrame(bool bOldFeatures=true);
     cv::Mat DrawRightFrame();
 
-    bool both;
-
 protected:
 
     void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);

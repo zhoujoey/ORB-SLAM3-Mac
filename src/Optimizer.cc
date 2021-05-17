@@ -267,23 +267,6 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
         }
         else
         {
-            /*if(!vSE3->fixed())
-            {
-                //cout << "KF " << pKF->mnId << ": " << endl;
-                pKF->mHessianPose = cv::Mat(6, 6, CV_64F);
-                pKF->mbHasHessian = true;
-                for(int r=0; r<6; ++r)
-                {
-                    for(int c=0; c<6; ++c)
-                    {
-                        //cout  << vSE3->hessian(r, c) << ", ";
-                        pKF->mHessianPose.at<double>(r, c) = vSE3->hessian(r, c);
-                    }
-                    //cout << endl;
-                }
-            }*/
-
-
             pKF->mTcwGBA.create(4,4,CV_32F);
             Converter::toCvMat(SE3quat).copyTo(pKF->mTcwGBA);
             pKF->mnBAGlobalForKF = nLoopKF;
@@ -2427,9 +2410,6 @@ void Optimizer::OptimizeEssentialGraph6DoF(KeyFrame* pCurKF, vector<KeyFrame*> &
 
         g2o::VertexSE3Expmap* VSE3 = new g2o::VertexSE3Expmap();
 
-        //cv::Mat Tcw = pKFi->mTcwBefMerge;
-        //Eigen::Matrix<double,3,3> Rcw = Converter::toMatrix3d(Tcw.rowRange(0,3).colRange(0,3));
-        //Eigen::Matrix<double,3,1> tcw = Converter::toVector3d(Tcw.rowRange(0,3).col(3));
         Eigen::Matrix<double,3,3> Rcw = Converter::toMatrix3d(pKFi->GetRotation());
         Eigen::Matrix<double,3,1> tcw = Converter::toVector3d(pKFi->GetTranslation()) / scale;
         g2o::SE3Quat Siw(Rcw,tcw);
@@ -2753,9 +2733,6 @@ void Optimizer::OptimizeEssentialGraph(KeyFrame* pCurKF, vector<KeyFrame*> &vpFi
 
         g2o::VertexSim3Expmap* VSim3 = new g2o::VertexSim3Expmap();
 
-        //cv::Mat Tcw = pKFi->mTcwBefMerge;
-        //Eigen::Matrix<double,3,3> Rcw = Converter::toMatrix3d(Tcw.rowRange(0,3).colRange(0,3));
-        //Eigen::Matrix<double,3,1> tcw = Converter::toVector3d(Tcw.rowRange(0,3).col(3));
         Eigen::Matrix<double,3,3> Rcw = Converter::toMatrix3d(pKFi->GetRotation());
         Eigen::Matrix<double,3,1> tcw = Converter::toVector3d(pKFi->GetTranslation());
         g2o::Sim3 Siw(Rcw,tcw,1.0);
@@ -3390,8 +3367,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     // Calibration
     const cv::Mat &K1 = pKF1->mK;
     const cv::Mat &K2 = pKF2->mK;
-
-    //const cv::Mat &DistCoeff2 = pKF2->mDistCoef;
 
     // Camera poses
     const cv::Mat R1w = pKF1->GetRotation();
@@ -5613,18 +5588,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
                         vpMPs.push_back(pMPi);
                         pMPi->mnBALocalForMerge=pMainKF->mnId;
                     }
-                    /*if(sNumObsMP.find(pMPi) == sNumObsMP.end())
-                    {
-                        sNumObsMP.insert(pMPi);
-                    }
-                    else
-                    {
-                        if(pMPi->mnBALocalForMerge!=pMainKF->mnId)
-                        {
-                            vpMPs.push_back(pMPi);
-                            pMPi->mnBALocalForMerge=pMainKF->mnId;
-                        }
-                    }*/
         }
 
         spKeyFrameBA.insert(pKFi);
@@ -5655,10 +5618,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
             {
                 if(!pMPi->isBad() && pMPi->GetMap() == pCurrentMap)
                 {
-                    /*if(sNumObsMP.find(pMPi) == sNumObsMP.end())
-                    {
-                        sNumObsMP.insert(pMPi);
-                    }*/
                     if(pMPi->mnBALocalForMerge != pMainKF->mnId)
                     {
                         vpMPs.push_back(pMPi);

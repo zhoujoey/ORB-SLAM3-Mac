@@ -175,20 +175,6 @@ public:
      */
     vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1) const;
 
-    // Search a match for each keypoint in the left image to a keypoint in the right image.
-    // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
-    /**
-     * @brief 计算双目图像之间的匹配关系 \n
-     * @details 如果对于一对特征点确定有匹配关系存在,那么这个特征点在空间中的深度将会被计算,并且和左特征点相对应的右特征点的坐标将会被存储. 
-     * \n 说白了，就是为左图的每一个特征点在右图中找到匹配点
-     * \n 方法是根据基线(有冗余范围)上描述子距离找到匹配, 再进行SAD精确定位 
-     * \n 这里所说的SAD是一种双目立体视觉匹配算法，可参考[https://blog.csdn.net/u012507022/article/details/51446891]
-     * \n 最后对所有SAD的值进行排序, 剔除SAD值较大的匹配对，然后利用抛物线拟合得到亚像素精度的匹配 
-     * \n 这里所谓的亚像素精度，就是使用这个拟合得到一个小于一个单位像素的修正量，这样可以取得更好的估计结果，计算出来的点的深度也就越准确
-     * \n 匹配成功后会更新 Frame::mvuRight (ur) 和 Frame::mvDepth (Z)
-     */
-    void ComputeStereoMatches();
-
     // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
     /**
      * @brief 当某个特征点的深度信息或者双目信息有效时,将它反投影到三维世界坐标系中
@@ -272,13 +258,11 @@ public:
     // In the stereo case, mvKeysUn is redundant as images must be rectified.
     // In the RGB-D case, RGB images can be distorted.
     // mvKeys:原始左图像提取出的特征点（未校正）
-    // mvKeysRight:原始右图像提取出的特征点（未校正）
+    // 原始右图像提取出的特征点（未校正）
     // mvKeysUn:校正mvKeys后的特征点，对于双目摄像头，一般得到的图像都是校正好的，再校正一次有点多余
     
     ///原始左图像提取出的特征点（未校正）
     std::vector<cv::KeyPoint> mvKeys;
-    ///原始右图像提取出的特征点（未校正）
-    std::vector<cv::KeyPoint> mvKeysRight;
 	///校正mvKeys后的特征点
     std::vector<cv::KeyPoint> mvKeysUn;
 

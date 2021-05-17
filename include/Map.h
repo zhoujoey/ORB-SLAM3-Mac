@@ -96,7 +96,7 @@ public:
     long unsigned int GetId();
 
     long unsigned int GetInitKFid();
-    void SetInitKFid(long unsigned int initKFif);
+
     long unsigned int GetMaxKFid();
 
     KeyFrame* GetOriginKF();

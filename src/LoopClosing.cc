@@ -63,11 +63,6 @@ void LoopClosing::Run()
         //----------------------------
         if(CheckNewKeyFrames())
         {
-            if(mpLastCurrentKF)
-            {
-                mpLastCurrentKF->mvpLoopCandKFs.clear();
-                mpLastCurrentKF->mvpMergeCandKFs.clear();
-            }
             if(NewDetectCommonRegions())
             {
                 if(mbMergeDetected)
@@ -358,21 +353,6 @@ bool LoopClosing::NewDetectCommonRegions()
             mnMergeNumNotFound++;
             if(mnMergeNumNotFound >= 2)
             {
-                /*cout << "+++++++Merge detected failed in KF" << endl;
-
-                for(int i=0; i<mvpMergeLastKF.size(); ++i)
-                {
-                    mvpMergeLastKF[i]->SetErase();
-                    mvpMergeCandidateKF[i]->SetErase();
-                    mvpMergeLastKF[i]->mbCurrentPlaceRecognition = true;
-                }
-
-                mvpMergeCandidateKF.clear();
-                mvpMergeLastKF.clear();
-                mvg2oSim3MergeTcw.clear();
-                mvnMergeNumMatches.clear();
-                mvvpMergeMapPoints.clear();
-                mvvpMergeMatchedMapPoints.clear();*/
 
                 mpMergeLastCurrentKF->SetErase();
                 mpMergeMatchedKF->SetErase();
@@ -1420,7 +1400,6 @@ void LoopClosing::MergeLocal()
         Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
         double s = g2oCorrectedSiw.scale();
 
-        pKFi->mfScale = s;
         eigt *=(1./s); //[R t/s;0 1]
 
         //cout << "R: " << mg2oMergeScw.rotation().toRotationMatrix() << endl;
@@ -1431,24 +1410,13 @@ void LoopClosing::MergeLocal()
 
         pKFi->mTcwMerge = correctedTiw;
 
-        //pKFi->SetPose(correctedTiw);
-
-        // Make sure connections are updated
-        //pKFi->UpdateMap(pMergeMap);
-        //pMergeMap->AddKeyFrame(pKFi);
-        //pCurrentMap->EraseKeyFrame(pKFi);
-
-        //cout << "After -> Map current: " << pCurrentMap << "; New map: " << pKFi->GetMap() << endl;
-
         if(pCurrentMap->isImuInitialized())
         {
             Eigen::Matrix3d Rcor = eigR.transpose()*vNonCorrectedSim3[pKFi].rotation().toRotationMatrix();
             pKFi->mVwbMerge = Converter::toCvMat(Rcor)*pKFi->GetVelocity();
-            //pKFi->SetVelocity(Converter::toCvMat(Rcor)*pKFi->GetVelocity()); // TODO: should add here scale s
         }
 
         //TODO DEBUG to know which are the KFs that had been moved to the other map
-        //pKFi->mnOriginMapId = 5;
     }
 
     for(MapPoint* pMPi : spLocalWindowMPs)
@@ -1470,14 +1438,9 @@ void LoopClosing::MergeLocal()
         cv::Mat cvCorrectedP3Dw = Converter::toCvMat(eigCorrectedP3Dw);
 
         pMPi->mPosMerge = cvCorrectedP3Dw;
-        //cout << "Rcor: " << Rcor << endl;
-        //cout << "Normal: " << pMPi->GetNormal() << endl;
+
         pMPi->mNormalVectorMerge = Converter::toCvMat(Rcor) * pMPi->GetNormal();
-        //pMPi->SetWorldPos(cvCorrectedP3Dw);
-        //pMPi->UpdateMap(pMergeMap);
-        //pMergeMap->AddMapPoint(pMPi);
-        //pCurrentMap->EraseMapPoint(pMPi);
-        //pMPi->UpdateNormalAndDepth();
+
     }
 #ifdef COMPILEDWITHC11
     std::chrono::steady_clock::time_point timeFinishTransfMerge = std::chrono::steady_clock::now();
@@ -1511,7 +1474,6 @@ void LoopClosing::MergeLocal()
 
             // Make sure connections are updated
             pKFi->UpdateMap(pMergeMap);
-            pKFi->mnMergeCorrectedForKF = mpCurrentKF->mnId;
             pMergeMap->AddKeyFrame(pKFi);
             pCurrentMap->EraseKeyFrame(pKFi);
 
@@ -1677,7 +1639,6 @@ void LoopClosing::MergeLocal()
                     Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
                     double s = g2oCorrectedSiw.scale();
 
-                    pKFi->mfScale = s;
                     eigt *=(1./s); //[R t/s;0 1]
 
                     cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt);
@@ -1774,9 +1735,6 @@ void LoopClosing::MergeLocal()
         mbStopGBA = false;
         mpThreadGBA = new thread(&LoopClosing::RunGlobalBundleAdjustment,this, pMergeMap, mpCurrentKF->mnId);
     }
-
-    mpMergeMatchedKF->AddMergeEdge(mpCurrentKF);
-    mpCurrentKF->AddMergeEdge(mpMergeMatchedKF);
 
     pCurrentMap->IncreaseChangeIndex();
     pMergeMap->IncreaseChangeIndex();
@@ -1937,7 +1895,7 @@ void LoopClosing::MergeLocal2()
         cout << "BAD ESSENTIAL GRAPH!!" << endl;*/
 
     cout << "Update essential graph" << endl;
-    // mpCurrentKF->UpdateConnections(); // to put at false mbFirstConnection
+    // mpCurrentKF->UpdateConnections(); // to put at false 
     pMergeMap->GetOriginKF()->SetFirstConnection(false);
     pNewChild = mpMergeMatchedKF->GetParent(); // Old parent, it will be the new child of this KF
     pNewParent = mpMergeMatchedKF; // Old child, now it will be the parent of its own parent(we need eliminate this KF from children list in its old parent)
@@ -2362,8 +2320,6 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
 
                 if(pKF->bImu)
                 {
-                    //cout << "-------Update inertial values" << endl;
-                    pKF->mVwbBefGBA = pKF->GetVelocity();
 
                     assert(!pKF->mVwbGBA.empty());
                     pKF->SetVelocity(pKF->mVwbGBA);

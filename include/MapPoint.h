@@ -203,8 +203,6 @@ public:
 
     static std::mutex mGlobalMutex;
 
-    unsigned int mnOriginMapId;
-
 protected:    
 
      // Position in absolute coordinates

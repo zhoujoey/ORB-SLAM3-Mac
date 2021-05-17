@@ -58,7 +58,6 @@ public:
 
     void SetTrackingPause();
 
-    bool both;
 private:
 
     bool Stop();

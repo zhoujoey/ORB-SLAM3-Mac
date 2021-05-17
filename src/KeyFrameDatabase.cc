@@ -894,14 +894,4 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
     return vpRelocCandidates;
 }
 
-void KeyFrameDatabase::SetORBVocabulary(ORBVocabulary* pORBVoc)
-{
-    ORBVocabulary** ptr;
-    ptr = (ORBVocabulary**)( &mpVoc );
-    *ptr = pORBVoc;
-
-    mvInvertedFile.clear();
-    mvInvertedFile.resize(mpVoc->size());
-}
-
 } //namespace ORB_SLAM

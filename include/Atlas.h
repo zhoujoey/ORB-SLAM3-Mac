@@ -116,7 +116,6 @@ public:
     void SetKeyFrameDababase(KeyFrameDatabase* pKFDB);
     KeyFrameDatabase* GetKeyFrameDatabase();
 
-    void SetORBVocabulary(ORBVocabulary* pORBVoc);
     ORBVocabulary* GetORBVocabulary();
 
     long unsigned int GetNumLivedKF();
