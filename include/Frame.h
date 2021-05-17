@@ -1,7 +1,7 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-#include<vector>
+#include <vector>
 
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
@@ -38,7 +38,9 @@ class KeyFrame;
 class ConstraintPoseImu;
 class GeometricCamera;
 class ORBextractor;
-
+/**
+ * @brief 帧
+ */
 class Frame
 {
 public:
@@ -444,10 +446,9 @@ public:
     GeometricCamera* mpCamera;
 
     //Grid for the right image
-    std::vector<std::size_t> mGridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+    std::vector<std::size_t> mGridRight[64][48];
 
     cv::Mat mTrl;
-
 };
 
 }// namespace ORB_SLAM

@@ -29,9 +29,8 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false)
 {
 }
-
-
-//Copy Constructor
+/** @details 另外注意，调用这个函数的时候，这个函数中隐藏的this指针其实是指向目标帧的
+ */
 Frame::Frame(const Frame &frame)
     :mpcpi(frame.mpcpi),
 	mpORBvocabulary(frame.mpORBvocabulary), 
@@ -75,6 +74,7 @@ Frame::Frame(const Frame &frame)
      mpCamera(frame.mpCamera),  
 	 mTrl(frame.mTrl.clone())
 {
+	//逐个复制，其实这里也是深拷贝
     for(int i=0;i<FRAME_GRID_COLS;i++)
         for(int j=0; j<FRAME_GRID_ROWS; j++)
 		{
@@ -85,6 +85,7 @@ Frame::Frame(const Frame &frame)
         }
 
     if(!frame.mTcw.empty())
+		//这里说的是给新的帧设置Pose
         SetPose(frame.mTcw);
 
     if(!frame.mVw.empty())
@@ -105,10 +106,17 @@ Frame::Frame(const Frame &frame)
  * @param[in] bf                                //baseline*f
  * @param[in] thDepth                           //区分远近点的深度阈值
  */
-Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF, const IMU::Calib &ImuCalib)
-    :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
-     mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-     mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera)
+Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
+		GeometricCamera* pCamera, 
+		cv::Mat &distCoef, const float &bf, const float &thDepth, 
+		Frame* pPrevF, const IMU::Calib &ImuCalib)
+    :mpcpi(NULL),mpORBvocabulary(voc),
+	mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),mTimeStamp(timeStamp), 
+	mK(static_cast<Pinhole*>(pCamera)->toK()), 
+	mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
+     mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), 
+	 mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), 
+	 mpCamera(pCamera)
 {
     // Frame ID
 	// Step 1 帧的ID 自增
@@ -167,17 +175,21 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
         mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
 		// 表示一个图像像素相当于多少个图像网格行（高）
         mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
-
-        fx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,0);
-        fy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,1);
-        cx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,2);
-        cy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,2);
+        cv::Mat K = static_cast<Pinhole*>(mpCamera)->toK();
+		//给类的静态成员变量复制
+        fx = K.at<float>(0,0);
+        fy = K.at<float>(1,1);
+        cx = K.at<float>(0,2);
+        cy = K.at<float>(1,2);
+		// 猜测是因为这种除法计算需要的时间略长，所以这里直接存储了这个中间计算结果
         invfx = 1.0f/fx;
         invfy = 1.0f/fy;
 
+		//特殊的初始化过程完成，标志复位
         mbInitialComputations=false;
     }
 
+    //计算 basline
     mb = mbf/fx;
 
     //Set no stereo fisheye information
@@ -852,7 +864,7 @@ void Frame::ComputeStereoMatches()
             // 列方向终点 eniu = r0 + 最大窗口滑动范围 + 图像块尺寸 + 1
             // 此次 + 1 和下面的提取图像块是列坐标+1是一样的，保证提取的图像块的宽是2 * w + 1
             // ! 源码： const float iniu = scaleduR0+L-w; 错误 error
-            const float iniu = scaleduR0+L-w;
+            const float iniu = scaleduR0-L-w;
             const float endu = scaleduR0+L+w+1;
 
 			// 判断搜索是否越界
@@ -999,5 +1011,4 @@ void Frame::setIntegrated()
     unique_lock<std::mutex> lock(*mpMutexImu);
     mbImuPreintegrated = true;
 }
-
 } //namespace ORB_SLAM

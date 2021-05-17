@@ -537,8 +537,6 @@ public:
     //KeyPoints in the right image (for stereo fisheye, coordinates are needed)
     const std::vector<cv::KeyPoint> mvKeysRight;
 
-    std::vector< std::vector <std::vector<size_t> > > mGridRight;
-
 };
 
 } //namespace ORB_SLAM
