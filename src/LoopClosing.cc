@@ -1835,9 +1835,6 @@ void LoopClosing::MergeLocal2()
 
     }
 
-
-    cout << "MergeMap init ID: " << pMergeMap->GetInitKFid() << "       CurrMap init ID: " << pCurrentMap->GetInitKFid() << endl;
-
     // Load KFs and MPs from merge map
     cout << "updating current map" << endl;
     {

@@ -730,16 +730,19 @@ void Tracking::Track()
             }
         }
 
-        
 
         // 将最新的关键帧作为当前帧的参考关键帧
         mCurrentFrame.mpReferenceKF = mpReferenceKF;
 
         // If we have an initial estimation of the camera pose and matching. Track the local map.
+        // Step 3：在跟踪得到当前帧初始姿态后，现在对local map进行跟踪得到更多的匹配，并优化当前位姿
+        // 前面只是跟踪一帧得到初始位姿，这里搜索局部关键帧、局部地图点，和当前帧进行投影匹配，得到更多匹配的MapPoints后进行Pose优化
+
         if(bOK)
             bOK = TrackLocalMap();
 
 
+        //根据上面的操作来判断是否追踪成功
         if(bOK)
             mState = OK;
         else if (mState == OK)
@@ -966,9 +969,9 @@ void Tracking::MonocularInitialization()
             return;
         }
     }
-    else
+    else    //如果单目初始化器已经被创建
     {
-		// Try to initialize
+        // Try to initialize
         // Step 2 如果当前帧特征点数太少（不超过100），则重新构造初始器
         // NOTICE 只有连续两帧的特征点个数都大于100时，才能继续进行初始化过程
         if (((int)mCurrentFrame.mvKeys.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
@@ -976,7 +979,6 @@ void Tracking::MonocularInitialization()
             delete mpInitializer;
             mpInitializer = static_cast<Initializer*>(NULL);
             fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
-
             return;
         }
 
@@ -1081,9 +1083,9 @@ void Tracking::CreateInitialMapMonocular()
 
         // Step 3.1 用3D点构造MapPoint
         MapPoint* pMP = new MapPoint(
-		worldPos,
-		pKFcur,
-		mpAtlas->GetCurrentMap());
+            worldPos,
+            pKFcur, 
+			mpAtlas->GetCurrentMap());
 
         // Step 3.2 为该MapPoint添加属性：
         // a.观测到该MapPoint的关键帧
@@ -1137,6 +1139,7 @@ void Tracking::CreateInitialMapMonocular()
 
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
+        cout << "Wrong initialization, reseting..." << endl;
         mpSystem->ResetActiveMap();
         return;
     }
@@ -1186,17 +1189,6 @@ void Tracking::CreateInitialMapMonocular()
     mvpLocalMapPoints=mpAtlas->GetAllMapPoints();
     mpReferenceKF = pKFcur;
     mCurrentFrame.mpReferenceKF = pKFcur;
-
-    // Compute here initial velocity
-    vector<KeyFrame*> vKFs = mpAtlas->GetAllKeyFrames();
-
-    cv::Mat deltaT = vKFs.back()->GetPose()*vKFs.front()->GetPoseInverse();
-    mVelocity = cv::Mat();
-    Eigen::Vector3d phi = LogSO3(Converter::toMatrix3d(deltaT.rowRange(0,3).colRange(0,3)));
-
-
-    double aux = (mCurrentFrame.mTimeStamp-mLastFrame.mTimeStamp)/(mCurrentFrame.mTimeStamp-mInitialFrame.mTimeStamp);
-    phi *= aux;
 
     //mLastFrame = Frame(mCurrentFrame);
     mLastFrame = mCurrentFrame;
@@ -1569,14 +1561,13 @@ bool Tracking::TrackLocalMap()
         }
         else
         {
-            // if(!mbMapUpdated && mState == OK) //  && (mnMatchesInliers>30))
-            if(!mbMapUpdated) //  && (mnMatchesInliers>30))
+            if(!mbMapUpdated)
             {
-                inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
+                inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame); 
             }
             else
             {
-                inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
+                inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
             }
         }
     }

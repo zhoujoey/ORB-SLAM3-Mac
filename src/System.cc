@@ -84,7 +84,7 @@ System::System(const string &strVocFile,					//词典文件路径
 							 mSensor);
 
     //Initialize the Local Mapping thread and launch
-    mpLocalMapper = new LocalMapping(this, mpAtlas, 
+    mpLocalMapper = new LocalMapping(mpAtlas,
 									mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR);
     mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,
 								mpLocalMapper);

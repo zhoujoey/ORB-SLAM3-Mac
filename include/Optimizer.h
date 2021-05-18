@@ -1,22 +1,3 @@
-/**
-* This file is part of ORB-SLAM3
-*
-* Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-*
-* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-* License as published by the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
-* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
-
-
 #ifndef OPTIMIZER_H
 #define OPTIMIZER_H
 
@@ -47,9 +28,39 @@ class Optimizer
 {
 public:
 
+    /**
+     * @brief bundle adjustment Optimization
+     * 
+     * 3D-2D 最小化重投影误差 e = (u,v) - project(Tcw*Pw) \n
+     * 
+     * 1. Vertex: g2o::VertexSE3Expmap()，即当前帧的Tcw
+     *            g2o::VertexSBAPointXYZ()，MapPoint的mWorldPos
+     * 2. Edge:
+     *     - g2o::EdgeSE3ProjectXYZ()，BaseBinaryEdge
+     *         + Vertex：待优化当前帧的Tcw
+     *         + Vertex：待优化MapPoint的mWorldPos
+     *         + measurement：MapPoint在当前帧中的二维位置(u,v)
+     *         + InfoMatrix: invSigma2(与特征点所在的尺度有关)
+     *         
+     * @param   vpKFs    关键帧 
+     *          vpMP     MapPoints
+     *          nIterations 迭代次数（20次）
+     *          pbStopFlag  是否强制暂停
+     *          nLoopKF  关键帧的个数 -- 但是我觉得形成了闭环关系的当前关键帧的id
+     *          bRobust  是否使用核函数
+     */
     void static BundleAdjustment(const std::vector<KeyFrame*> &vpKF, const std::vector<MapPoint*> &vpMP,
                                  int nIterations = 5, bool *pbStopFlag=NULL, const unsigned long nLoopKF=0,
                                  const bool bRobust = true);
+
+    /**
+     * @brief 进行全局BA优化，但主要功能还是调用 BundleAdjustment,这个函数相当于加了一个壳.
+     * @param[in] pMap          地图对象的指针
+     * @param[in] nIterations   迭代次数
+     * @param[in] pbStopFlag    外界给的控制GBA停止的标志位
+     * @param[in] nLoopKF       当前回环关键帧的id，其实也就是参与GBA的关键帧个数
+     * @param[in] bRobust       是否使用鲁棒核函数
+     */
     void static GlobalBundleAdjustemnt(Map* pMap, int nIterations=5, bool *pbStopFlag=NULL,
                                        const unsigned long nLoopKF=0, const bool bRobust = true);
     void static FullInertialBA(Map *pMap, int its, const bool bFixLocal=false, const unsigned long nLoopKF=0, bool *pbStopFlag=NULL, bool bInit=false, float priorG = 1e2, float priorA=1e6, Eigen::VectorXd *vSingVal = NULL, bool *bHess=NULL);

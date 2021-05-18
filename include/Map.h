@@ -21,40 +21,14 @@ class KeyFrame;
 class Atlas;
 class KeyFrameDatabase;
 
+/**
+ * @brief 地图
+ * 
+ */
 class Map
 {
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-        ar & mnId;
-        ar & mnInitKFid;
-        ar & mnMaxKFid;
-        ar & mnBigChangeIdx;
-        // Set of KeyFrames and MapPoints, in this version the set serializator is not working
-        //ar & mspKeyFrames;
-        //ar & mspMapPoints;
-
-        ar & mvpBackupKeyFrames;
-        ar & mvpBackupMapPoints;
-
-        ar & mvBackupKeyFrameOriginsId;
-
-        ar & mnBackupKFinitialID;
-        ar & mnBackupKFlowerID;
-
-        ar & mbImuInitialized;
-        ar & mbIsInertial;
-        ar & mbIMU_BA1;
-        ar & mbIMU_BA2;
-
-        ar & mnInitKFid;
-        ar & mnMaxKFid;
-        ar & mnLastLoopKFid;
-    }
-
 public:
+    /** @brief 构造函数 */
     Map();
     Map(int initKFid);
     ~Map();
@@ -182,20 +156,14 @@ public:
     void ChangeId(long unsigned int nId);
 
     unsigned int GetLowerKFID();
+    std::vector<KeyFrame*> mvpKeyFrameOrigins;
 
-    vector<KeyFrame*> mvpKeyFrameOrigins;
-    vector<unsigned long int> mvBackupKeyFrameOriginsId;
-    KeyFrame* mpFirstRegionKF;
+    ///当更新地图时的互斥量.回环检测中和局部BA后更新全局地图的时候会用到这个
     std::mutex mMutexMapUpdate;
 
     // This avoid that two points are created simultaneously in separate threads (id conflict)
+    ///为了避免地图点id冲突设计的互斥量
     std::mutex mMutexPointCreation;
-
-    bool mbFail;
-
-    // Size of the thumbnail (always in power of 2)
-    static const int THUMB_WIDTH = 512;
-    static const int THUMB_HEIGHT = 512;
 
     static long unsigned int nNextId;
 
@@ -206,14 +174,8 @@ protected:
     std::set<MapPoint*> mspMapPoints;
     std::set<KeyFrame*> mspKeyFrames;
 
-    std::vector<MapPoint*> mvpBackupMapPoints;
-    std::vector<KeyFrame*> mvpBackupKeyFrames;
-
     KeyFrame* mpKFinitial;
     KeyFrame* mpKFlowerID;
-
-    unsigned long int mnBackupKFinitialID;
-    unsigned long int mnBackupKFlowerID;
 
     std::vector<MapPoint*> mvpReferenceMapPoints;
 
@@ -224,17 +186,11 @@ protected:
 
     long unsigned int mnInitKFid;
     long unsigned int mnMaxKFid;
-    long unsigned int mnLastLoopKFid;
 
     // Index related to a big change in the map (loop closure, global BA)
     int mnBigChangeIdx;
 
-
-    // View of the map in aerial sight (for the AtlasViewer)
-    GLubyte* mThumbnail;
-
     bool mIsInUse;
-    bool mHasTumbnail;
     bool mbBad = false;
 
     bool mbIsInertial;
