@@ -1050,18 +1050,18 @@ void Tracking::MonocularInitialization()
  */
 void Tracking::CreateInitialMapMonocular()
 {
-    // Create KeyFrames
+    // Create KeyFrames 认为单目初始化时候的参考帧和当前帧都是关键帧
     KeyFrame* pKFini = new KeyFrame(mInitialFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
     KeyFrame* pKFcur = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
 
     if(mSensor == System::IMU_MONOCULAR)
         pKFini->mpImuPreintegrated = (IMU::Preintegrated*)(NULL);
-
-
+    // Step 1 将初始关键帧,当前关键帧的描述子转为BoW
     pKFini->ComputeBoW();
     pKFcur->ComputeBoW();
 
     // Insert KFs in the map
+    // Step 2 将关键帧插入到地图
     mpAtlas->AddKeyFrame(pKFini);
     mpAtlas->AddKeyFrame(pKFcur);
 
@@ -1076,8 +1076,14 @@ void Tracking::CreateInitialMapMonocular()
             continue;
 
         //Create MapPoint.
+        // 用三角化点初始化为空间点的世界坐标
         cv::Mat worldPos(mvIniP3D[i]);
-        MapPoint* pMP = new MapPoint(worldPos,pKFcur,mpAtlas->GetCurrentMap());
+
+        // Step 3.1 用3D点构造MapPoint
+        MapPoint* pMP = new MapPoint(
+		worldPos,
+		pKFcur,
+		mpAtlas->GetCurrentMap());
 
         // Step 3.2 为该MapPoint添加属性：
         // a.观测到该MapPoint的关键帧
