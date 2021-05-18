@@ -2373,9 +2373,6 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
             pActiveMap->InformNewBigChange();
             pActiveMap->IncreaseChangeIndex();
 
-            // TODO Check this update
-            // mpTracker->UpdateFrameIMU(1.0f, mpTracker->GetLastKeyFrame()->GetImuBias(), mpTracker->GetLastKeyFrame());
-
             mpLocalMapper->Release();
 
         }
