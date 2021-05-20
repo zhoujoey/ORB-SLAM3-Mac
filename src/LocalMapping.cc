@@ -1000,15 +1000,14 @@ void LocalMapping::KeyFrameCulling()
                     if(pMP->Observations()>thObs)
                     {
                         const int &scaleLevel = pKF->mvKeysUn[i].octave;
-                        const map<KeyFrame*, tuple<int,int>> observations = pMP->GetObservations();
+                        const map<KeyFrame*, size_t> observations = pMP->GetObservations();
                         int nObs=0;
-                        for(map<KeyFrame*, tuple<int,int>>::const_iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
+                        for(map<KeyFrame*, size_t>::const_iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
                         {
                             KeyFrame* pKFi = mit->first;
                             if(pKFi==pKF)
                                 continue;
-                            tuple<int,int> indexes = mit->second;
-                            int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+                            int leftIndex = mit->second;
                             int scaleLeveli = -1;
                             scaleLeveli = pKFi->mvKeysUn[leftIndex].octave;
 

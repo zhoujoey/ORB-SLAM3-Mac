@@ -1906,8 +1906,11 @@ void Tracking::UpdateLocalKeyFrames()
             {
                 if(!pMP->isBad())
                 {
-                    const map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
-                    for(map<KeyFrame*,tuple<int,int>>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++)
+                // 得到观测到该地图点的关键帧和该地图点在关键帧中的索引
+                const map<KeyFrame*,size_t> observations = pMP->GetObservations();
+                // 由于一个地图点可以被多个关键帧观测到,因此对于每一次观测,都对观测到这个地图点的关键帧进行累计投票
+                for(map<KeyFrame*,size_t>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++)
+                    // 这里的操作非常精彩！
                         keyframeCounter[it->first]++;
                 }
                 else
@@ -1929,8 +1932,8 @@ void Tracking::UpdateLocalKeyFrames()
                     continue;
                 if(!pMP->isBad())
                 {
-                    const map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
-                    for(map<KeyFrame*,tuple<int,int>>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++)
+                    const map<KeyFrame*,size_t> observations = pMP->GetObservations();
+                    for(map<KeyFrame*,size_t>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++)
                         keyframeCounter[it->first]++;
                 }
                 else

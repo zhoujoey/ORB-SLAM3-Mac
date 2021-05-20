@@ -61,7 +61,6 @@ src/FrameDrawer.cc
 src/Converter.cc
 src/MapPoint.cc
 src/KeyFrame.cc
-src/Atlas.cc
 src/Map.cc
 src/MapDrawer.cc
 src/Optimizer.cc

@@ -690,8 +690,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<KeyFrame*> &vpBowCand, 
                                     continue;
                                 }
 
-                                tuple<size_t,size_t> indexes = pMPi->GetIndexInKeyFrame(pKFi);
-                                int index = get<0>(indexes);
+                                int indexes = pMPi->GetIndexInKeyFrame(pKFi);
                                 if(index >= 0)
                                 {
                                     int coord_x = pKFi->mvKeysUn[index].pt.x;
@@ -830,44 +829,7 @@ bool LoopClosing::DetectCommonRegionsFromLastKF(KeyFrame* pCurrentKF, KeyFrame* 
     int nProjMatches = 30;
     if(nNumProjMatches >= nProjMatches)
     {
-        /*cout << "PR_From_LastKF: KF " << pCurrentKF->mnId << " has " << nNumProjMatches << " with KF " << pMatchedKF->mnId << endl;
-
-        int max_x = -1, min_x = 1000000;
-        int max_y = -1, min_y = 1000000;
-        for(MapPoint* pMPi : vpMatchedMPs)
-        {
-            if(!pMPi || pMPi->isBad())
-            {
-                continue;
-            }
-
-            tuple<size_t,size_t> indexes = pMPi->GetIndexInKeyFrame(pMatchedKF);
-            int index = get<0>(indexes);
-            if(index >= 0)
-            {
-                int coord_x = pCurrentKF->mvKeysUn[index].pt.x;
-                if(coord_x < min_x)
-                {
-                    min_x = coord_x;
-                }
-                if(coord_x > max_x)
-                {
-                    max_x = coord_x;
-                }
-                int coord_y = pCurrentKF->mvKeysUn[index].pt.y;
-                if(coord_y < min_y)
-                {
-                    min_y = coord_y;
-                }
-                if(coord_y > max_y)
-                {
-                    max_y = coord_y;
-                }
-            }
-        }*/
-        //cout << "PR_From_LastKF: Coord in X -> " << min_x << ", " << max_x << "; and Y -> " << min_y << ", " << max_y << endl;
-        //cout << "PR_From_LastKF: features area in X -> " << (max_x - min_x) << " and Y -> " << (max_y - min_y) << endl;
-
+     
 
         return true;
     }
@@ -1469,7 +1431,7 @@ void LoopClosing::CheckObservations(set<KeyFrame*> &spKFsMap1, set<KeyFrame*> &s
                 continue;
             }
 
-            map<KeyFrame*, tuple<int,int>> mMPijObs = pMPij->GetObservations();
+            map<KeyFrame*, size_t> mMPijObs = pMPij->GetObservations();
             for(KeyFrame* pKFi2 : spKFsMap2)
             {
                 if(mMPijObs.find(pKFi2) != mMPijObs.end())

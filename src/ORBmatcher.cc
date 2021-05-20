@@ -1537,7 +1537,7 @@ int ORBmatcher::SearchBySim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint*> &
         {
             // pKF1中第i个特征点已经匹配成功
             vbAlreadyMatched1[i]=true;
-            int idx2 = get<0>(pMP->GetIndexInKeyFrame(pKF2));
+            int idx2 = pMP->GetIndexInKeyFrame(pKF2);
             if(idx2>=0 && idx2<N2)
                 vbAlreadyMatched2[idx2]=true;
         }

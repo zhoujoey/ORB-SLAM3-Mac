@@ -7,6 +7,7 @@
 namespace ORB_SLAM3
 {
 
+// 下一个关键帧的id
 long unsigned int KeyFrame::nNextId=0;
 
 KeyFrame::KeyFrame():
@@ -51,7 +52,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
 	mbCurrentPlaceRecognition(false),
     mTrl(F.mTrl), mnNumberOfOpt(0)
 {
-
+    // 获取id
     mnId=nNextId++;
 
     // 根据指定的普通帧, 初始化用于加速匹配的网格对象信息; 其实就把每个网格中有的特征点的索引复制过来
@@ -238,13 +239,12 @@ void KeyFrame::UpdateBestCovisibles()
     list<int> lWs;          // 所有连接关键帧对应的权重（共视地图点数目）
     for(size_t i=0, iend=vPairs.size(); i<iend;i++)
     {
-        if(!vPairs[i].second->isBad())
-        {
-            lKFs.push_front(vPairs[i].second);
-            lWs.push_front(vPairs[i].first);
-        }
+        // push_front 后变成从大到小
+        lKFs.push_front(vPairs[i].second);
+        lWs.push_front(vPairs[i].first);
     }
 
+    // 权重从大到小排列的连接关键帧
     mvpOrderedConnectedKeyFrames = vector<KeyFrame*>(lKFs.begin(),lKFs.end());
     // 从大到小排列的权重，和mvpOrderedConnectedKeyFrames一一对应
     mvOrderedWeights = vector<int>(lWs.begin(), lWs.end());
@@ -368,12 +368,10 @@ void KeyFrame::EraseMapPointMatch(const size_t &idx)
 // 同上
 void KeyFrame::EraseMapPointMatch(MapPoint* pMP)
 {
-    tuple<size_t,size_t> indexes = pMP->GetIndexInKeyFrame(this);
-    size_t leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
-    if(leftIndex != -1)
-        mvpMapPoints[leftIndex]=static_cast<MapPoint*>(NULL);
-    if(rightIndex != -1)
-        mvpMapPoints[rightIndex]=static_cast<MapPoint*>(NULL);
+    //获取当前地图点在某个关键帧的观测中，对应的特征点的索引，如果没有观测，索引为-1
+    int idx = pMP->GetIndexInKeyFrame(this);
+    if(idx>=0)
+        mvpMapPoints[idx]=static_cast<MapPoint*>(NULL);
 }
 
 // 地图点的替换
@@ -481,11 +479,13 @@ void KeyFrame::UpdateConnections()
         if(pMP->isBad())
             continue;
 
-        map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
+        // 对于每一个地图点，observations记录了可以观测到该地图点的所有关键帧
+        map<KeyFrame*,size_t> observations = pMP->GetObservations();
 
-        for(map<KeyFrame*,tuple<int,int>>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
+        for(map<KeyFrame*,size_t>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
         {
-            if(mit->first->mnId==mnId || mit->first->isBad() || mit->first->GetMap() != mpMap)
+            // 除去自身，自己与自己不算共视
+            if(mit->first->mnId==mnId)
                 continue;
             // 这里的操作非常精彩！
             // map[key] = value，当要插入的键存在时，会覆盖键对应的原来的值。如果键不存在，则添加一组键值对
@@ -565,7 +565,7 @@ void KeyFrame::UpdateConnections()
         mvOrderedWeights = vector<int>(lWs.begin(), lWs.end());
 
         // Step 5 更新生成树的连接
-        if(mbFirstConnection && mnId!=mpMap->GetInitKFid())
+        if(mbFirstConnection && mnId!=0)
         {
             // 初始化该关键帧的父关键帧为共视程度最高的那个关键帧
             mpParent = mvpOrderedConnectedKeyFrames.front();
@@ -686,7 +686,7 @@ void KeyFrame::SetBadFlag()
         unique_lock<mutex> lock(mMutexConnections);
 
         // 第0关键帧不允许被删除
-        if(mnId==mpMap->GetInitKFid())
+        if(mnId==0)
 		{
             return;
 		}

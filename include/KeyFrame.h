@@ -10,7 +10,6 @@
 #include "KeyFrameDatabase.h"
 #include "ImuTypes.h"
 
-
 #include <mutex>
 
 #include <boost/serialization/base_object.hpp>

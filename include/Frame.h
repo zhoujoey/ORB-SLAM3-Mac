@@ -427,7 +427,6 @@ private:
 
 public:
 
-    //Grid for the right image
     std::vector<std::size_t> mGridRight[64][48];
 
     cv::Mat mTrl;

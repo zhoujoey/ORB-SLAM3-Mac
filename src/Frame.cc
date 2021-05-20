@@ -6,7 +6,6 @@
 #include "ORBextractor.h"
 #include "Converter.h"
 #include "ORBmatcher.h"
-
 #include <thread>
 
 namespace ORB_SLAM3
@@ -30,8 +29,8 @@ Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuP
 /** @details 另外注意，调用这个函数的时候，这个函数中隐藏的this指针其实是指向目标帧的
  */
 Frame::Frame(const Frame &frame):
-	mpcpi(frame.mpcpi),
-	mpORBvocabulary(frame.mpORBvocabulary), 
+	 mpcpi(frame.mpcpi),
+	 mpORBvocabulary(frame.mpORBvocabulary), 
      mpORBextractorLeft(frame.mpORBextractorLeft), 
      mpORBextractorRight(frame.mpORBextractorRight),
      mTimeStamp(frame.mTimeStamp), 

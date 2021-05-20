@@ -1,16 +1,13 @@
 #ifndef MAPPOINT_H
 #define MAPPOINT_H
 
-#include"KeyFrame.h"
-#include"Frame.h"
-#include"Map.h"
+#include "KeyFrame.h"
+#include "Frame.h"
+#include "Map.h"
 
-#include<opencv2/core/core.hpp>
-#include<mutex>
+#include <opencv2/core/core.hpp>
+#include <mutex>
 
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/array.hpp>
-#include <boost/serialization/map.hpp>
 
 namespace ORB_SLAM3
 {
@@ -21,90 +18,6 @@ class Frame;
 
 class MapPoint
 {
-    template<class Archive>
-    void serializeMatrix(Archive &ar, cv::Mat& mat, const unsigned int version)
-    {
-        int cols, rows, type;
-        bool continuous;
-
-        if (Archive::is_saving::value) {
-            cols = mat.cols; rows = mat.rows; type = mat.type();
-            continuous = mat.isContinuous();
-        }
-
-        ar & cols & rows & type & continuous;
-        if (Archive::is_loading::value)
-            mat.create(rows, cols, type);
-
-        if (continuous) {
-            const unsigned int data_size = rows * cols * mat.elemSize();
-            ar & boost::serialization::make_array(mat.ptr(), data_size);
-        } else {
-            const unsigned int row_size = cols*mat.elemSize();
-            for (int i = 0; i < rows; i++) {
-                ar & boost::serialization::make_array(mat.ptr(i), row_size);
-            }
-        }
-    }
-
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        ar & mnId;
-        ar & mnFirstKFid;
-        ar & mnFirstFrame;
-        ar & nObs;
-        // Variables used by the tracking
-        ar & mTrackProjX;
-        ar & mTrackProjY;
-        ar & mTrackDepth;
-        ar & mTrackDepthR;
-        ar & mTrackProjXR;
-        ar & mTrackProjYR;
-        ar & mbTrackInView;
-        ar & mbTrackInViewR;
-        ar & mnTrackScaleLevel;
-        ar & mnTrackScaleLevelR;
-        ar & mTrackViewCos;
-        ar & mTrackViewCosR;
-        ar & mnTrackReferenceForFrame;
-        ar & mnLastFrameSeen;
-
-        // Variables used by local mapping
-        ar & mnBALocalForKF;
-        ar & mnFuseCandidateForKF;
-
-        // Variables used by loop closing and merging
-        ar & mnLoopPointForKF;
-        ar & mnCorrectedByKF;
-        ar & mnCorrectedReference;
-        serializeMatrix(ar,mPosGBA,version);
-        ar & mnBAGlobalForKF;
-        ar & mnBALocalForMerge;
-        serializeMatrix(ar,mPosMerge,version);
-        serializeMatrix(ar,mNormalVectorMerge,version);
-
-        // Protected variables
-        serializeMatrix(ar,mWorldPos,version);
-        //ar & BOOST_SERIALIZATION_NVP(mBackupObservationsId);
-        ar & mBackupObservationsId1;
-        ar & mBackupObservationsId2;
-        serializeMatrix(ar,mNormalVector,version);
-        serializeMatrix(ar,mDescriptor,version);
-        ar & mBackupRefKFId;
-        ar & mnVisible;
-        ar & mnFound;
-
-        ar & mbBad;
-        ar & mBackupReplacedId;
-
-        ar & mfMinDistance;
-        ar & mfMaxDistance;
-
-    }
-
-
 public:
     MapPoint();
 
@@ -119,13 +32,47 @@ public:
     cv::Mat GetNormal();
     KeyFrame* GetReferenceKeyFrame();
 
-    std::map<KeyFrame*,std::tuple<int,int>> GetObservations();
+    /**
+     * @brief 获取观测到当前地图点的关键帧
+     * @return std::map<KeyFrame*,size_t> 观测到当前地图点的关键帧序列； 
+     *                                    size_t 这个对象对应为该地图点在该关键帧的特征点的访问id
+     */
+    std::map<KeyFrame*,size_t> GetObservations();
+    
+    // 获取当前地图点的被观测次数
     int Observations();
 
-    void AddObservation(KeyFrame* pKF,int idx);
+    /**
+     * @brief 添加观测
+     *
+     * 记录哪些KeyFrame的那个特征点能观测到该MapPoint \n
+     * 并增加观测的相机数目nObs，单目+1，双目或者grbd+2
+     * 这个函数是建立关键帧共视关系的核心函数，能共同观测到某些MapPoints的关键帧是共视关键帧
+     * @param[in] pKF KeyFrame,观测到当前地图点的关键帧
+     * @param[in] idx MapPoint在KeyFrame中的索引
+     */
+    void AddObservation(KeyFrame* pKF,size_t idx);
+    /**
+     * @brief 取消某个关键帧对当前地图点的观测
+     * @detials 如果某个关键帧要被删除，那么会发生这个操作
+     * @param[in] pKF 
+     */
     void EraseObservation(KeyFrame* pKF);
 
-    std::tuple<int,int> GetIndexInKeyFrame(KeyFrame* pKF);
+    /**
+     * @brief 获取观测到当前地图点的关键帧,在观测数据中的索引
+     * 
+     * @param[in] pKF   关键帧
+     * @return int      索引
+     */
+    int GetIndexInKeyFrame(KeyFrame* pKF);
+    /**
+     * @brief 查看某个关键帧是否看到了当前的地图点
+     * 
+     * @param[in] pKF   关键帧
+     * @return true 
+     * @return false 
+     */
     bool IsInKeyFrame(KeyFrame* pKF);
 
     void SetBadFlag();
@@ -155,8 +102,6 @@ public:
 
     Map* GetMap();
     void UpdateMap(Map* pMap);
-
-    void PrintObservations();
 
 public:
     long unsigned int mnId;
@@ -209,7 +154,8 @@ protected:
      cv::Mat mWorldPos;
 
      // Keyframes observing the point and associated index in keyframe
-     std::map<KeyFrame*,std::tuple<int,int> > mObservations;
+    // 观测到该MapPoint的KF和该MapPoint在KF中的索引
+    std::map<KeyFrame*,size_t> mObservations; 
      // For save relation without pointer, this is necessary for save/load function
      std::map<long unsigned int, int> mBackupObservationsId1;
      std::map<long unsigned int, int> mBackupObservationsId2;

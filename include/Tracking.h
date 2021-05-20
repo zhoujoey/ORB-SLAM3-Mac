@@ -427,9 +427,6 @@ protected:
     double mTime_PosePred;
     double mTime_LocalMapTrack;
     double mTime_NewKF_Dec;
-
-public:
-    cv::Mat mImRight;
 };
 
 } //namespace ORB_SLAM

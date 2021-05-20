@@ -176,7 +176,7 @@ void Viewer::Run()
         pangolin::FinishFrame();
 
         cv::Mat toShow;
-        cv::Mat im = mpFrameDrawer->DrawFrame(true);
+        cv::Mat im = mpFrameDrawer->DrawFrame();
 
         toShow = im;
 
