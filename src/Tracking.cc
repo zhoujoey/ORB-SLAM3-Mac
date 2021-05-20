@@ -2088,8 +2088,8 @@ bool Tracking::Relocalization()
     // Relocalization is performed when tracking is lost
     // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
     // Step 2：用词袋找到与当前帧相似的候选关键帧
-    vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpMap);
-
+    vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame);
+    
     // 如果没有候选关键帧，则退出
     if(vpCandidateKFs.empty()) 
 	{

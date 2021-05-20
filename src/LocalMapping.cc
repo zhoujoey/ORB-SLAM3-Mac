@@ -10,8 +10,8 @@
 namespace ORB_SLAM3
 {
 
-LocalMapping::LocalMapping(Map *pMap, const float bMonocular, bool bInertial, const string &_strSeqName):
-    mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap), bInitializing(false),
+LocalMapping::LocalMapping(Map *pMap, const float bMonocular, bool bInertial):
+    mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap), bInitializing(false),
     mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),
     mScale(1.0), infoInertial(Eigen::MatrixXd::Zero(9,9))
 {
@@ -77,8 +77,6 @@ void LocalMapping::Run()
             CreateNewMapPoints();
 
             // 已经处理完队列中的最后的一个关键帧
-            mbAbortBA = false;
-
             if(!CheckNewKeyFrames())
             {
                 // Find more matches in neighbor keyframes and fuse point duplications
@@ -86,6 +84,7 @@ void LocalMapping::Run()
                 SearchInNeighbors();
             }
 
+            mbAbortBA = false;
             int num_FixedKF_BA = 0;
 
             if(!CheckNewKeyFrames() && !stopRequested())
@@ -105,7 +104,6 @@ void LocalMapping::Run()
                             {
                                 cout << "Not enough motion for initializing. Reseting..." << endl;
                                 unique_lock<mutex> lock(mMutexReset);
-                                mbResetRequestedActiveMap = true;
                                 mpMapToReset = mpCurrentKeyFrame->GetMap();
                                 mbBadImu = true;
                             }
@@ -367,6 +365,8 @@ void LocalMapping::CreateNewMapPoints()
     // For stereo inertial case
     if(mbMonocular)
         nn=20;
+
+    // Step 1：在当前关键帧的共视关键帧中找到共视程度最高的nn帧相邻关键帧
     vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
     if (mbInertial)
@@ -411,7 +411,7 @@ void LocalMapping::CreateNewMapPoints()
     for(size_t i=0; i<vpNeighKFs.size(); i++)
     {
         // ! 疑似bug，正确应该是 if(i>0 && !CheckNewKeyFrames())
-        if(i>0 && CheckNewKeyFrames())// && (mnMatchesInliers>50))
+        if(i>0 && CheckNewKeyFrames())
             return;
 
         KeyFrame* pKF2 = vpNeighKFs[i];
@@ -451,10 +451,7 @@ void LocalMapping::CreateNewMapPoints()
         // Search matches that fullfil epipolar constraint
         // Step 5：通过词袋对两关键帧的未匹配的特征点快速匹配，用极线约束抑制离群点，生成新的匹配点对
         vector<pair<size_t,size_t> > vMatchedIndices;
-        bool bCoarse = mbInertial &&
-                ((!mpCurrentKeyFrame->GetMap()->GetIniertialBA2() && mpCurrentKeyFrame->GetMap()->GetIniertialBA1())||
-                 mpTracker->mState==Tracking::RECENTLY_LOST);
-        matcher.SearchForTriangulation(mpCurrentKeyFrame,pKF2,F12,vMatchedIndices,false,bCoarse);
+        matcher.SearchForTriangulation(mpCurrentKeyFrame,pKF2,F12,vMatchedIndices,false);
 
         cv::Mat Rcw2 = pKF2->GetRotation();
         cv::Mat Rwc2 = Rcw2.t();
@@ -965,7 +962,7 @@ void LocalMapping::KeyFrameCulling()
         count++;
         KeyFrame* pKF = *vit;
 
-        if((pKF->mnId==pKF->GetMap()->GetInitKFid()) || pKF->isBad())
+        if((pKF->mnId==0) || pKF->isBad())
             continue;
         const vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
 
@@ -1102,6 +1099,7 @@ void LocalMapping::RequestReset()
     }
 }
 
+// 检查是否有复位线程的请求
 void LocalMapping::ResetIfRequested()
 {
 
@@ -1111,48 +1109,40 @@ void LocalMapping::ResetIfRequested()
             mlNewKeyFrames.clear();
             mlpRecentAddedMapPoints.clear();
             mbResetRequested=false;
-            mbResetRequestedActiveMap = false;
 
             // Inertial parameters
             mTinit = 0.f;
             mbBadImu=false;
 
-        }
-
-        if(mbResetRequestedActiveMap) {
-            mlNewKeyFrames.clear();
-            mlpRecentAddedMapPoints.clear();
-
-            // Inertial parameters
-            mTinit = 0.f;
-            mbBadImu=false;
-
-            mbResetRequestedActiveMap = false;
         }
 
 
 }
 
+// 请求终止当前线程
 void LocalMapping::RequestFinish()
 {
     unique_lock<mutex> lock(mMutexFinish);
     mbFinishRequested = true;
 }
 
+// 检查是否已经有外部线程请求终止当前线程
 bool LocalMapping::CheckFinish()
 {
     unique_lock<mutex> lock(mMutexFinish);
     return mbFinishRequested;
 }
 
+// 设置当前线程已经真正地结束了
 void LocalMapping::SetFinish()
 {
     unique_lock<mutex> lock(mMutexFinish);
-    mbFinished = true;    
+    mbFinished = true;    // 线程已经被结束
     unique_lock<mutex> lock2(mMutexStop);
-    mbStopped = true;
+    mbStopped = true;     //既然已经都结束了,那么当前线程也已经停止工作了
 }
 
+// 当前线程的run函数是否已经终止
 bool LocalMapping::isFinished()
 {
     unique_lock<mutex> lock(mMutexFinish);

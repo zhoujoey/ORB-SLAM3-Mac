@@ -27,7 +27,7 @@ public:
      * @param[in] pMap          局部地图的句柄？ //?
      * @param[in] bMonocular    当前系统是否是单目输入
      */
-    LocalMapping(Map* pMap, const float bMonocular, bool bInertial, const string &_strSeqName=std::string());
+    LocalMapping(Map* pMap, const float bMonocular, bool bInertial);
 
     /**
      * @brief 设置回环检测线程句柄
@@ -161,7 +161,6 @@ protected:
     void ResetIfRequested();
     /// 当前系统是否收到了请求复位的信号
     bool mbResetRequested;
-    bool mbResetRequestedActiveMap;
     Map* mpMapToReset;
 	/// 和复位信号有关的互斥量
     std::mutex mMutexReset;
