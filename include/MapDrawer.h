@@ -20,10 +20,10 @@
 #ifndef MAPDRAWER_H
 #define MAPDRAWER_H
 
-#include"Atlas.h"
-#include"MapPoint.h"
-#include"KeyFrame.h"
-#include<pangolin/pangolin.h>
+#include "Map.h"
+#include "MapPoint.h"
+#include "KeyFrame.h"
+#include <pangolin/pangolin.h>
 
 #include<mutex>
 
@@ -33,10 +33,18 @@ namespace ORB_SLAM3
 class MapDrawer
 {
 public:
-    MapDrawer(Atlas* pAtlas, const string &strSettingPath);
+    /**
+     * @brief 构造函数
+     * 
+     * @param[in] pMap              地图句柄
+     * @param[in] strSettingPath    配置文件的路径
+     */
+    MapDrawer(Map* pMap, const string &strSettingPath);
+    
+    //地图句柄
+    Map* mpMap;
 
-    Atlas* mpAtlas;
-
+    /** @brief 绘制地图点 */
     void DrawMapPoints();
     void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph);
     void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc);

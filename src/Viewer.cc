@@ -1,20 +1,3 @@
-/**
-* This file is part of ORB-SLAM3
-*
-* Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-*
-* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-* License as published by the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
-* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
 
 
 #include "Viewer.h"
@@ -157,7 +140,7 @@ void Viewer::Run()
             s_cam.Follow(Twc);
         }
 
-        if(menuTopView && mpMapDrawer->mpAtlas->isImuInitialized())
+        if(menuTopView && mpMapDrawer->mpMap->isImuInitialized())
         {
             menuTopView = false;
             bCameraView = false;
@@ -168,12 +151,6 @@ void Viewer::Run()
             s_cam.Follow(Ow);
         }
 
-        /*if(menuSideView && mpMapDrawer->mpAtlas->isImuInitialized())
-        {
-            s_cam.SetProjectionMatrix(pangolin::ProjectionMatrix(1024,768,3000,3000,512,389,0.1,10000));
-            s_cam.SetModelViewMatrix(pangolin::ModelViewLookAt(0.0,0.1,30.0,0,0,0,0.0,0.0,1.0));
-            s_cam.Follow(Twwp);
-        }*/
 
 
         if(menuLocalizationMode && !bLocalizationMode)
@@ -219,7 +196,7 @@ void Viewer::Run()
             bFollow = true;
             menuFollowCamera = true;
             //mpSystem->Reset();
-            mpSystem->ResetActiveMap();
+            mpSystem->Reset();
             menuReset = false;
         }
 

@@ -22,7 +22,7 @@
 
 #include "KeyFrame.h"
 #include "LocalMapping.h"
-#include "Atlas.h"
+#include "Map.h"
 #include "ORBVocabulary.h"
 #include "Tracking.h"
 
@@ -39,7 +39,6 @@ namespace ORB_SLAM3
 class Tracking;
 class LocalMapping;
 class KeyFrameDatabase;
-class Map;
 
 
 class LoopClosing
@@ -52,7 +51,7 @@ public:
 
 public:
 
-    LoopClosing(Atlas* pAtlas, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
+    LoopClosing(Map* pMap, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
 
     void SetTracker(Tracking* pTracker);
 
@@ -64,7 +63,6 @@ public:
     void InsertKeyFrame(KeyFrame *pKF);
 
     void RequestReset();
-    void RequestResetActiveMap(Map* pMap);
 
     // This function will run in a separate thread
     void RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoopKF);
@@ -81,8 +79,6 @@ public:
     void RequestFinish();
 
     bool isFinished();
-
-    Viewer* mpViewer;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -109,14 +105,13 @@ protected:
 
     void CorrectLoop();
 
-    void MergeLocal();
+    // void MergeLocal();
     void MergeLocal2();
 
     void CheckObservations(set<KeyFrame*> &spKFsMap1, set<KeyFrame*> &spKFsMap2);
     
     void ResetIfRequested();
     bool mbResetRequested;
-    bool mbResetActiveMapRequested;
     Map* mpMapToReset;
     std::mutex mMutexReset;
 
@@ -126,7 +121,9 @@ protected:
     bool mbFinished;
     std::mutex mMutexFinish;
 
-    Atlas* mpAtlas;
+    /// (全局)地图的指针
+    Map* mpMap;
+    /// 追踪线程句柄
     Tracking* mpTracker;
 
     KeyFrameDatabase* mpKeyFrameDB;

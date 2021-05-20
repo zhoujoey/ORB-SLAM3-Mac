@@ -10,7 +10,7 @@
 #include "Tracking.h"
 #include "FrameDrawer.h"
 #include "MapDrawer.h"
-#include "Atlas.h"
+#include "Map.h"
 #include "LocalMapping.h"
 #include "LoopClosing.h"
 #include "KeyFrameDatabase.h"
@@ -25,7 +25,7 @@ namespace ORB_SLAM3
 //要用到的其他类的前视声明
 class Viewer;
 class FrameDrawer;
-class Atlas;
+class Map;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
@@ -75,7 +75,6 @@ public:
     // Reset the system (clear map)
     // 复位 系统
     void Reset();
-    void ResetActiveMap();
 
     // All threads will be requested to finish.
     // It waits until all threads have finished.
@@ -120,8 +119,7 @@ private:
 
     //指向地图（数据库）的指针
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
-    //Map* mpMap;
-    Atlas* mpAtlas;
+    Map* mpMap;
 
     // Tracker. It receives a frame and computes the associated camera pose.
     // It also decides when to insert a new keyframe, create some new MapPoints and
@@ -157,7 +155,6 @@ private:
     //复位标志，注意这里目前还不清楚为什么要定义为std::mutex类型 TODO 
     std::mutex mMutexReset;
     bool mbReset;
-    bool mbResetActiveMap;
 
     // Change mode flags
     //模式改变标志

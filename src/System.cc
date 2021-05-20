@@ -5,6 +5,7 @@
 //包含了一些自建库
 #include "System.h"
 #include "Converter.h"		// TODO 目前还不是很明白这个是做什么的
+#include "LocalMapping.h"
 //包含共有库
 #include <thread>					//多线程
 #include <pangolin/pangolin.h>		//可视化界面
@@ -21,7 +22,6 @@ System::System(const string &strVocFile,					//词典文件路径
 					 mSensor(sensor), 							//初始化传感器类型
 					 mpViewer(static_cast<Viewer*>(NULL)),		//空。。。对象指针？  TODO 
 					 mbReset(false),							//无复位标志
-					 mbResetActiveMap(false),
 					 mbActivateLocalizationMode(false),			//没有这个模式转换标志
         			 mbDeactivateLocalizationMode(false)		//没有这个模式转换标志
 {
@@ -59,39 +59,39 @@ System::System(const string &strVocFile,					//词典文件路径
     //Create KeyFrame Database
     mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
-    //Create the Atlas
-    //mpMap = new Map();
-    mpAtlas = new Atlas(0);
+    //Create the Map
+    mpMap = new Map();
     //----
 
     if (mSensor==IMU_MONOCULAR)
-        mpAtlas->SetInertialSensor();
+        mpMap->SetInertialSensor();
 
     //Create Drawers. These are used by the Viewer
-    mpFrameDrawer = new FrameDrawer(mpAtlas);
-    mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile);
+    //这里的帧绘制器和地图绘制器将会被可视化的Viewer所使用
+    mpFrameDrawer = new FrameDrawer(mpMap);
+    mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
 
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
-
-    mpTracker = new Tracking(this, 
-                            mpVocabulary, 
-                            mpFrameDrawer, 
-                            mpMapDrawer,
-                             mpAtlas, 
-							 mpKeyFrameDatabase, 
-							 strSettingsFile, 
-							 mSensor);
+    mpTracker = new Tracking(this,						//现在还不是很明白为什么这里还需要一个this指针  TODO  
+    						 mpVocabulary,				//字典
+    						 mpFrameDrawer, 			//帧绘制器
+    						 mpMapDrawer,				//地图绘制器
+                             mpMap, 					//地图
+                             mpKeyFrameDatabase, 		//关键帧地图
+                             strSettingsFile, 			//设置文件路径
+                             mSensor);					//传感器类型iomanip
 
     //Initialize the Local Mapping thread and launch
-    mpLocalMapper = new LocalMapping(mpAtlas,
-									mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR);
+    mpLocalMapper = new LocalMapping(mpMap, 				//指定使iomanip
+    								 mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR);	// TODO 为什么这个要设置成为MONOCULAR？？？
+    //运行这个局部建图线程
     mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,
 								mpLocalMapper);
 
-    //Initialize the Loop Closing thread and launch
-    mpLoopCloser = new LoopClosing(mpAtlas, 
-									mpKeyFrameDatabase, 
+    //Initialize the Loop Closing thread and launchiomanip
+    mpLoopCloser = new LoopClosing(mpMap, 						//地图
+    							   mpKeyFrameDatabase, 			//关键帧数据库
 									mpVocabulary, 
 									mSensor!=MONOCULAR); // mSensor!=MONOCULAR);
     mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, 
@@ -157,19 +157,12 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const
 
     // Check reset
     {
-        unique_lock<mutex> lock(mMutexReset);
-        if(mbReset)
-        {
-            mpTracker->Reset();
-            mbReset = false;
-            mbResetActiveMap = false;
-        }
-        else if(mbResetActiveMap)
-        {
-            cout << "SYSTEM-> Reseting active map in monocular case" << endl;
-            mpTracker->ResetActiveMap();
-            mbResetActiveMap = false;
-        }
+    unique_lock<mutex> lock(mMutexReset);
+    if(mbReset)
+    {
+        mpTracker->Reset();
+        mbReset = false;
+    }
     }
 
     if (mSensor == System::IMU_MONOCULAR)
@@ -207,7 +200,7 @@ bool System::MapChanged()
 {
     static int n=0;
     //其实整个函数功能实现的重点还是在这个GetLastBigChangeIdx函数上
-    int curn = mpAtlas->GetLastBigChangeIdx();
+    int curn = mpMap->GetLastBigChangeIdx();
     if(n<curn)
     {
         n=curn;
@@ -223,11 +216,6 @@ void System::Reset()
     mbReset = true;
 }
 
-void System::ResetActiveMap()
-{
-    unique_lock<mutex> lock(mMutexReset);
-    mbResetActiveMap = true;
-}
 
 void System::StopViewer()
 {

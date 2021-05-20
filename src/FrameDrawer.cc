@@ -8,8 +8,8 @@
 
 namespace ORB_SLAM3
 {
-
-FrameDrawer::FrameDrawer(Atlas* pAtlas):mpAtlas(pAtlas)
+//构造函数
+FrameDrawer::FrameDrawer(Map* pMap):mpMap(pMap)
 {
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
@@ -289,11 +289,10 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
         s << " TRYING TO INITIALIZE ";
     else if(nState==Tracking::OK)
     {
-        s << "SLAM MODE |  ";
-        int nMaps = mpAtlas->CountMaps();
-        int nKFs = mpAtlas->KeyFramesInMap();
-        int nMPs = mpAtlas->MapPointsInMap();
-        s << "Maps: " << nMaps << ", KFs: " << nKFs << ", MPs: " << nMPs << ", Matches: " << mnTracked;
+        int nKFs = mpMap->KeyFramesInMap();
+        int nMPs = mpMap->MapPointsInMap();
+        s << "KFs: " << nKFs << ", MPs: " << nMPs << ", Matches: " << mnTracked;
+        //在视觉里程计中匹配到的
         if(mnTrackedVO>0)
             s << ", + VO matches: " << mnTrackedVO;
     }

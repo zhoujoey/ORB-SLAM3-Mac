@@ -2,7 +2,7 @@
 #define LOCALMAPPING_H
 
 #include "KeyFrame.h"
-#include "Atlas.h"
+#include "Map.h"
 #include "LoopClosing.h"
 #include "Tracking.h"
 #include "KeyFrameDatabase.h"
@@ -16,7 +16,7 @@ namespace ORB_SLAM3
 
 class Tracking;
 class LoopClosing;
-class Atlas;
+class Map;
 
 /** @brief 局部建图线程类 */
 class LocalMapping
@@ -27,7 +27,7 @@ public:
      * @param[in] pMap          局部地图的句柄？ //?
      * @param[in] bMonocular    当前系统是否是单目输入
      */
-    LocalMapping(Atlas* pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName=std::string());
+    LocalMapping(Map* pMap, const float bMonocular, bool bInertial, const string &_strSeqName=std::string());
 
     /**
      * @brief 设置回环检测线程句柄
@@ -59,7 +59,6 @@ public:
     void RequestStop();
     /** @brief 请求当前线程复位,由外部线程调用,堵塞的 */
     void RequestReset();
-    void RequestResetActiveMap(Map* pMap);
     /**
      * @brief 检查是否要把当前的局部建图线程停止,如果当前线程没有那么检查请求标志,如果请求标志被置位那么就设置为停止工作.由run函数调用
      * @return true 
@@ -179,7 +178,8 @@ protected:
     std::mutex mMutexFinish;
 
     // 指向局部地图的句柄
-    Atlas* mpAtlas;
+    Map* mpMap;
+
     // 回环检测线程句柄
     LoopClosing* mpLoopCloser;
     // 追踪线程句柄

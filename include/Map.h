@@ -18,7 +18,6 @@ namespace ORB_SLAM3
 
 class MapPoint;
 class KeyFrame;
-class Atlas;
 class KeyFrameDatabase;
 
 /**

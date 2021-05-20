@@ -26,8 +26,8 @@
 namespace ORB_SLAM3
 {
 
-
-MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath):mpAtlas(pAtlas)
+//构造函数
+MapDrawer::MapDrawer(Map* pMap, const string &strSettingPath):mpMap(pMap)
 {
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
@@ -42,8 +42,10 @@ MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath):mpAtlas(pAtlas
 
 void MapDrawer::DrawMapPoints()
 {
-    const vector<MapPoint*> &vpMPs = mpAtlas->GetAllMapPoints();
-    const vector<MapPoint*> &vpRefMPs = mpAtlas->GetReferenceMapPoints();
+    //取出所有的地图点
+    const vector<MapPoint*> &vpMPs = mpMap->GetAllMapPoints();
+    //取出mvpReferenceMapPoints，也即局部地图d点
+    const vector<MapPoint*> &vpRefMPs = mpMap->GetReferenceMapPoints();
 
     set<MapPoint*> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
 
@@ -85,7 +87,8 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
     const float h = w*0.75;
     const float z = w*0.6;
 
-    const vector<KeyFrame*> vpKFs = mpAtlas->GetAllKeyFrames();
+    // step 1：取出所有的关键帧
+    const vector<KeyFrame*> vpKFs = mpMap->GetAllKeyFrames();
 
     if(bDrawKF)
     {
@@ -104,7 +107,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
                 glColor3f(1.0f,0.0f,0.0f);
                 glBegin(GL_LINES);
 
-                //cout << "Initial KF: " << mpAtlas->GetCurrentMap()->GetOriginKF()->mnId << endl;
+                //cout << "Initial KF: " << mpMap->GetOriginKF()->mnId << endl;
                 //cout << "Parent KF: " << vpKFs[i]->mnId << endl;
             }
             else
@@ -190,7 +193,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         glEnd();
     }
 
-    if(bDrawInertialGraph && mpAtlas->isImuInitialized())
+    if(bDrawInertialGraph && mpMap->isImuInitialized())
     {
         glLineWidth(mGraphLineWidth);
         glColor4f(1.0f,0.0f,0.0f,0.6f);
@@ -211,66 +214,6 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         }
 
         glEnd();
-    }
-
-    vector<Map*> vpMaps = mpAtlas->GetAllMaps();
-
-    if(bDrawKF)
-    {
-        for(Map* pMap : vpMaps)
-        {
-            if(pMap == mpAtlas->GetCurrentMap())
-                continue;
-
-            vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
-
-            for(size_t i=0; i<vpKFs.size(); i++)
-            {
-                KeyFrame* pKF = vpKFs[i];
-                cv::Mat Twc = pKF->GetPoseInverse().t();
-
-                glPushMatrix();
-
-                glMultMatrixf(Twc.ptr<GLfloat>(0));
-
-                if(!vpKFs[i]->GetParent()) // It is the first KF in the map
-                {
-                    glLineWidth(mKeyFrameLineWidth*5);
-                    glColor3f(1.0f,0.0f,0.0f);
-                    glBegin(GL_LINES);
-                }
-                else
-                {
-                    glLineWidth(mKeyFrameLineWidth);
-                    glColor3f(0.0f,0.0f,1.0f);
-                    glBegin(GL_LINES);
-                }
-
-                glVertex3f(0,0,0);
-                glVertex3f(w,h,z);
-                glVertex3f(0,0,0);
-                glVertex3f(w,-h,z);
-                glVertex3f(0,0,0);
-                glVertex3f(-w,-h,z);
-                glVertex3f(0,0,0);
-                glVertex3f(-w,h,z);
-
-                glVertex3f(w,h,z);
-                glVertex3f(w,-h,z);
-
-                glVertex3f(-w,h,z);
-                glVertex3f(-w,-h,z);
-
-                glVertex3f(-w,h,z);
-                glVertex3f(w,h,z);
-
-                glVertex3f(-w,-h,z);
-                glVertex3f(w,-h,z);
-                glEnd();
-
-                glPopMatrix();
-            }
-        }
     }
 }
 

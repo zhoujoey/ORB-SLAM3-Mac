@@ -36,7 +36,7 @@ Tracking::Tracking(
 	ORBVocabulary* pVoc, 
 	FrameDrawer *pFrameDrawer, 
 	MapDrawer *pMapDrawer, 
-	Atlas *pAtlas, 
+    Map *pMap,                          //地图句柄
 	KeyFrameDatabase* pKFDB, 
 	const string &strSettingPath, 
 	const int sensor):
@@ -51,7 +51,7 @@ Tracking::Tracking(
 	mpViewer(NULL),
     mpFrameDrawer(pFrameDrawer), 
 	mpMapDrawer(pMapDrawer), 
-	mpAtlas(pAtlas), 
+    mpMap(pMap), 
 	mnLastRelocFrameId(0),
     mnInitialFrameId(0), 
 	mbCreatedMap(false), 
@@ -512,11 +512,11 @@ void Tracking::Track()
     if(mpLocalMapper->mbBadImu)
     {
         cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
-        mpSystem->ResetActiveMap();
+        mpSystem->Reset();
         return;
     }
 
-    Map* pCurrentMap = mpAtlas->GetCurrentMap();
+    Map* pCurrentMap = mpMap;
 
     if(mState!=NO_IMAGES_YET)
     {
@@ -525,33 +525,25 @@ void Tracking::Track()
             cerr << "ERROR: Frame with a timestamp older than previous frame detected!" << endl;
             unique_lock<mutex> lock(mMutexImuQueue);
             mlQueueImuData.clear();
-            CreateMapInAtlas();
             return;
         }
         else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
         {
             cout << "id last: " << mLastFrame.mnId << "    id curr: " << mCurrentFrame.mnId << endl;
-            if(mpAtlas->isInertial())
-            {
 
-                if(mpAtlas->isImuInitialized())
+                if(mpMap->isImuInitialized())
                 {
                     cout << "Timestamp jump detected. State set to LOST. Reseting IMU integration..." << endl;
                     if(!pCurrentMap->GetIniertialBA2())
                     {
-                        mpSystem->ResetActiveMap();
-                    }
-                    else
-                    {
-                        CreateMapInAtlas();
+                        mpSystem->Reset();
                     }
                 }
                 else
                 {
                     cout << "Timestamp jump detected, before IMU initialization. Reseting..." << endl;
-                    mpSystem->ResetActiveMap();
+                    mpSystem->Reset();
                 }
-            }
 
             return;
         }
@@ -609,10 +601,9 @@ void Tracking::Track()
             return;
         }
 
-        if(mpAtlas->GetAllMaps().size() == 1)
-        {
+
             mnFirstFrameId = mCurrentFrame.mnId;
-        }
+
     }
     else
     {
@@ -636,7 +627,7 @@ void Tracking::Track()
             // 第一个条件,如果运动模型为空,说明是刚初始化开始，或者已经跟丢了
             // 第二个条件,如果当前帧紧紧地跟着在重定位的帧的后面，我们将重定位帧来恢复位姿
             // mnLastRelocFrameId 上一次重定位的那一帧
-            if((mVelocity.empty() && !pCurrentMap->isImuInitialized()) || mCurrentFrame.mnId<mnLastRelocFrameId+2)
+            if((mVelocity.empty() && !mpMap->isImuInitialized()) || mCurrentFrame.mnId<mnLastRelocFrameId+2)
             {
                 // 用最近的关键帧来跟踪当前的普通帧
                 // 通过BoW的方式在参考帧中找当前帧特征点的匹配点
@@ -710,12 +701,11 @@ void Tracking::Track()
             else if (mState == LOST)
             {
 
-                if (pCurrentMap->KeyFramesInMap()<10)
+                if (mpMap->KeyFramesInMap()<10)
                 {
-                    mpSystem->ResetActiveMap();
+                    mpSystem->Reset();
                     cout << "Reseting current map..." << endl;
-                }else
-                    CreateMapInAtlas();
+                }
 
                 if(mpLastKeyFrame)
                     mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
@@ -747,7 +737,7 @@ void Tracking::Track()
                 if(!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2())
                 {
                     cout << "IMU is not or recently initialized. Reseting active map..." << endl;
-                    mpSystem->ResetActiveMap();
+                    mpSystem->Reset();
                 }
 
                 mState=RECENTLY_LOST;
@@ -864,17 +854,16 @@ void Tracking::Track()
         {
             if(pCurrentMap->KeyFramesInMap()<=5)
             {
-                mpSystem->ResetActiveMap();
+                mpSystem->Reset();
                 return;
             }
             if ((mSensor == System::IMU_MONOCULAR) )
-                if (!pCurrentMap->isImuInitialized())
+                if (!mpMap->isImuInitialized())
                 {
-                    mpSystem->ResetActiveMap();
+                    mpSystem->Reset();
                     return;
                 }
 
-            CreateMapInAtlas();
         }
 
         if(!mCurrentFrame.mpReferenceKF)
@@ -1048,8 +1037,8 @@ void Tracking::MonocularInitialization()
 void Tracking::CreateInitialMapMonocular()
 {
     // Create KeyFrames 认为单目初始化时候的参考帧和当前帧都是关键帧
-    KeyFrame* pKFini = new KeyFrame(mInitialFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
-    KeyFrame* pKFcur = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
+    KeyFrame* pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB);
+    KeyFrame* pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
 
     if(mSensor == System::IMU_MONOCULAR)
         pKFini->mpImuPreintegrated = (IMU::Preintegrated*)(NULL);
@@ -1059,8 +1048,8 @@ void Tracking::CreateInitialMapMonocular()
 
     // Insert KFs in the map
     // Step 2 将关键帧插入到地图
-    mpAtlas->AddKeyFrame(pKFini);
-    mpAtlas->AddKeyFrame(pKFcur);
+    mpMap->AddKeyFrame(pKFini);
+    mpMap->AddKeyFrame(pKFcur);
 
     // Create MapPoints and asscoiate to keyframes
     // Step 3 用初始化得到的3D点来生成地图点MapPoints
@@ -1080,7 +1069,7 @@ void Tracking::CreateInitialMapMonocular()
         MapPoint* pMP = new MapPoint(
             worldPos,
             pKFcur, 
-			mpAtlas->GetCurrentMap());
+			mpMap);
 
         // Step 3.2 为该MapPoint添加属性：
         // a.观测到该MapPoint的关键帧
@@ -1107,7 +1096,7 @@ void Tracking::CreateInitialMapMonocular()
         mCurrentFrame.mvbOutlier[mvIniMatches[i]] = false;
 
         //Add to Map
-        mpAtlas->AddMapPoint(pMP);
+        mpMap->AddMapPoint(pMP);
     }
 
     // Update Connections
@@ -1120,7 +1109,7 @@ void Tracking::CreateInitialMapMonocular()
     sMPs = pKFini->GetMapPoints();
 
     // Bundle Adjustment
-    Optimizer::GlobalBundleAdjustemnt(mpAtlas->GetCurrentMap(),20);
+    Optimizer::GlobalBundleAdjustemnt(mpMap,20);
 
     // Set median depth to 1
     // Step 5 取场景的中值深度，用于尺度归一化 
@@ -1135,7 +1124,7 @@ void Tracking::CreateInitialMapMonocular()
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
         cout << "Wrong initialization, reseting..." << endl;
-        mpSystem->ResetActiveMap();
+        mpSystem->Reset();
         return;
     }
 
@@ -1181,65 +1170,23 @@ void Tracking::CreateInitialMapMonocular()
 
     mvpLocalKeyFrames.push_back(pKFcur);
     mvpLocalKeyFrames.push_back(pKFini);
-    mvpLocalMapPoints=mpAtlas->GetAllMapPoints();
+    // 单目初始化之后，得到的初始地图中的所有点都是局部地图点
+    mvpLocalMapPoints=mpMap->GetAllMapPoints();
     mpReferenceKF = pKFcur;
     mCurrentFrame.mpReferenceKF = pKFcur;
 
     //mLastFrame = Frame(mCurrentFrame);
     mLastFrame = mCurrentFrame;
 
-    mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
+    mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
     mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
 
-    mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.push_back(pKFini);
+    mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
     mState=OK;
 }
 
-
-void Tracking::CreateMapInAtlas()
-{
-    mnLastInitFrameId = mCurrentFrame.mnId;
-    mpAtlas->CreateNewMap();
-    if ( mSensor == System::IMU_MONOCULAR)
-        mpAtlas->SetInertialSensor();
-    mbSetInit=false;
-
-    mnInitialFrameId = mCurrentFrame.mnId+1;
-    mState = NO_IMAGES_YET;
-
-    // Restart the variable with information about the last KF
-    mVelocity = cv::Mat();
-    mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is the current id, because it is the new starting point for new map
-
-    mbVO = false; // Init value for know if there are enough MapPoints in the last KF
-    if(mSensor == System::MONOCULAR || mSensor == System::IMU_MONOCULAR)
-    {
-        if(mpInitializer)
-            delete mpInitializer;
-        mpInitializer = static_cast<Initializer*>(NULL);
-    }
-
-    if((mSensor == System::IMU_MONOCULAR ) && mpImuPreintegratedFromLastKF)
-    {
-        delete mpImuPreintegratedFromLastKF;
-        mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
-    }
-
-    if(mpLastKeyFrame)
-        mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
-
-    if(mpReferenceKF)
-        mpReferenceKF = static_cast<KeyFrame*>(NULL);
-
-    mLastFrame = Frame();
-    mCurrentFrame = Frame();
-    mvIniMatches.clear();
-
-    mbCreatedMap = true;
-
-}
 /*
  * @brief 检查上一帧中的地图点是否需要被替换
  * 
@@ -1398,7 +1345,7 @@ void Tracking::UpdateLastFrame()
         if(bCreateNew)
         {
             cv::Mat x3D = mLastFrame.UnprojectStereo(i);
-            MapPoint* pNewMP = new MapPoint(x3D,mpAtlas->GetCurrentMap(),&mLastFrame,i);
+            MapPoint* pNewMP = new MapPoint(x3D,mpMap,&mLastFrame,i);
 
             mLastFrame.mvpMapPoints[i]=pNewMP;
 
@@ -1436,7 +1383,7 @@ bool Tracking::TrackWithMotionModel()
 
 
 
-    if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU))
+    if (mpMap->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU))
     {
         // Predict ste with IMU if it is initialized and it doesnt need reset
         PredictStateIMU();
@@ -1546,7 +1493,7 @@ bool Tracking::TrackLocalMap()
 
     int inliers;
     //测试
-    if (!mpAtlas->isImuInitialized())
+    if (!mpMap->isImuInitialized())
         Optimizer::PoseOptimization(&mCurrentFrame);
     else
     {
@@ -1627,7 +1574,7 @@ bool Tracking::TrackLocalMap()
  */
 bool Tracking::NeedNewKeyFrame()
 {
-    if(((mSensor == System::IMU_MONOCULAR) ) && !mpAtlas->GetCurrentMap()->isImuInitialized())
+    if(((mSensor == System::IMU_MONOCULAR) ) && !mpMap->isImuInitialized())
     {
         if (mSensor == System::IMU_MONOCULAR && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
             return true;
@@ -1644,7 +1591,7 @@ bool Tracking::NeedNewKeyFrame()
     // Return false if IMU is initialazing
     if (mpLocalMapper->IsInitializing())
         return false;
-    const int nKFs = mpAtlas->KeyFramesInMap();
+    const int nKFs = mpMap->KeyFramesInMap();
 
     // Do not insert keyframes if not enough frames have passed from last relocalisation
     // mCurrentFrame.mnId是当前帧的ID
@@ -1765,9 +1712,9 @@ void Tracking::CreateNewKeyFrame()
         return;
 
     // Step 1：将当前帧构造成关键帧
-    KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
+    KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
 
-    if(mpAtlas->isImuInitialized())
+    if(mpMap->isImuInitialized())
         pKF->bImu = true;
 
     pKF->SetNewBias(mCurrentFrame.mImuBias);
@@ -1859,14 +1806,14 @@ void Tracking::SearchLocalPoints()
     {
         ORBmatcher matcher(0.8);
         int th = 1;
-        if(mpAtlas->isImuInitialized())
+        if(mpMap->isImuInitialized())
         {
-            if(mpAtlas->GetCurrentMap()->GetIniertialBA2())
+            if(mpMap->GetIniertialBA2())
                 th=2;
             else
                 th=3;
         }
-        else if(!mpAtlas->isImuInitialized() && (mSensor==System::IMU_MONOCULAR))
+        else if(!mpMap->isImuInitialized() && (mSensor==System::IMU_MONOCULAR))
         {
             th=10;
         }
@@ -1894,7 +1841,7 @@ void Tracking::UpdateLocalMap()
 {
     // This is for visualization
     // 设置参考地图点用于绘图显示局部地图点（红色）
-    mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
+    mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
     // Update
     // 用共视图来更新局部关键帧和局部地图点
@@ -1950,7 +1897,7 @@ void Tracking::UpdateLocalKeyFrames()
     // Each map point vote for the keyframes in which it has been observed
     // Step 1：遍历当前帧的地图点，记录所有能观测到当前帧地图点的关键帧
     map<KeyFrame*,int> keyframeCounter;
-    if(!mpAtlas->isImuInitialized() || (mCurrentFrame.mnId<mnLastRelocFrameId+2))
+    if(!mpMap->isImuInitialized() || (mCurrentFrame.mnId<mnLastRelocFrameId+2))
     {
         for(int i=0; i<mCurrentFrame.N; i++)
         {
@@ -2138,7 +2085,7 @@ bool Tracking::Relocalization()
     // Relocalization is performed when tracking is lost
     // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
     // Step 2：用词袋找到与当前帧相似的候选关键帧
-    vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpAtlas->GetCurrentMap());
+    vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpMap);
 
     // 如果没有候选关键帧，则退出
     if(vpCandidateKFs.empty()) 
@@ -2377,10 +2324,9 @@ void Tracking::Reset()
     mpKeyFrameDB->clear();
 
     // Clear Map (this erase MapPoints and KeyFrames)
-    mpAtlas->clearAtlas();
-    mpAtlas->CreateNewMap();
+    mpMap->clear();
     if ( mSensor == System::IMU_MONOCULAR)
-        mpAtlas->SetInertialSensor();
+        mpMap->SetInertialSensor();
     mnInitialFrameId = 0;
     //然后复位各种变量
     KeyFrame::nNextId = 0;
@@ -2410,86 +2356,6 @@ void Tracking::Reset()
 
 }
 
-void Tracking::ResetActiveMap()
-{
-    if(mpViewer)
-    {
-        mpViewer->RequestStop();
-        while(!mpViewer->isStopped())
-            usleep(3000);
-    }
-
-    Map* pMap = mpAtlas->GetCurrentMap();
-
-    mpLocalMapper->RequestResetActiveMap(pMap);
-
-    // Reset Loop Closing
-    mpLoopClosing->RequestResetActiveMap(pMap);
-
-    // Clear BoW Database
-    mpKeyFrameDB->clearMap(pMap); // Only clear the active map references
-
-    // Clear Map (this erase MapPoints and KeyFrames)
-    mpAtlas->clearMap();
-
-
-    //KeyFrame::nNextId = mpAtlas->GetLastInitKFid();
-    //Frame::nNextId = mnLastInitFrameId;
-    mnLastInitFrameId = Frame::nNextId;
-    mnLastRelocFrameId = mnLastInitFrameId;
-    mState = NO_IMAGES_YET; //NOT_INITIALIZED;
-
-    if(mpInitializer)
-    {
-        delete mpInitializer;
-        mpInitializer = static_cast<Initializer*>(NULL);
-    }
-
-    list<bool> lbLost;
-    // lbLost.reserve(mlbLost.size());
-    unsigned int index = mnFirstFrameId;
-    cout << "mnFirstFrameId = " << mnFirstFrameId << endl;
-    for(Map* pMap : mpAtlas->GetAllMaps())
-    {
-        if(pMap->GetAllKeyFrames().size() > 0)
-        {
-            if(index > pMap->GetLowerKFID())
-                index = pMap->GetLowerKFID();
-        }
-    }
-
-    //cout << "First Frame id: " << index << endl;
-    int num_lost = 0;
-
-    for(list<bool>::iterator ilbL = mlbLost.begin(); ilbL != mlbLost.end(); ilbL++)
-    {
-        if(index < mnInitialFrameId)
-            lbLost.push_back(*ilbL);
-        else
-        {
-            lbLost.push_back(true);
-            num_lost += 1;
-        }
-
-        index++;
-    }
-    cout << num_lost << " Frames had been set to lost" << endl;
-
-    mlbLost = lbLost;
-
-    mnInitialFrameId = mCurrentFrame.mnId;
-    mnLastRelocFrameId = mCurrentFrame.mnId;
-
-    mCurrentFrame = Frame();
-    mLastFrame = Frame();
-    mpReferenceKF = static_cast<KeyFrame*>(NULL);
-    mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
-    mvIniMatches.clear();
-
-    if(mpViewer)
-        mpViewer->Release();
-
-}
 
 void Tracking::ChangeCalibration(const string &strSettingPath)
 {

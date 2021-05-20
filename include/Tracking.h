@@ -7,7 +7,7 @@
 
 #include "Viewer.h"
 #include "FrameDrawer.h"
-#include"Atlas.h"
+#include "Map.h"
 #include "LocalMapping.h"
 #include "LoopClosing.h"
 #include "Frame.h"
@@ -26,7 +26,7 @@ namespace ORB_SLAM3
 
 class Viewer;
 class FrameDrawer;
-class Atlas;
+class Map;
 class LocalMapping;
 class LoopClosing;
 class System;
@@ -51,7 +51,7 @@ public:
      * @param[in] strSettingPath    配置文件路径
      * @param[in] sensor            传感器类型
      */
-    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
+    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
              KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
 
     /**
@@ -99,7 +99,7 @@ public:
         return mpLastKeyFrame;
     }
 
-    void CreateMapInAtlas();
+
     std::mutex mMutexTracks;
 
     int GetMatchesInliers();
@@ -163,7 +163,6 @@ public:
      * @brief 整个系统进行复位操作
      */
     void Reset();
-    void ResetActiveMap();
 
 
 
@@ -359,7 +358,7 @@ protected:
 
     //Map
     ///(全局)地图句柄
-    Atlas* mpAtlas;
+    Map* mpMap;
 
     //Calibration matrix   相机的参数矩阵相关
     ///相机的内参数矩阵
