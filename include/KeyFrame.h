@@ -10,7 +10,6 @@
 #include "KeyFrameDatabase.h"
 #include "ImuTypes.h"
 
-#include "GeometricCamera.h"
 
 #include <mutex>
 
@@ -26,8 +25,6 @@ class Map;
 class MapPoint;
 class Frame;
 class KeyFrameDatabase;
-
-class GeometricCamera;
 
 /**
  * @brief 关键帧类
@@ -467,8 +464,6 @@ protected:
     std::mutex mMutexMap;
 
 public:
-    GeometricCamera* mpCamera;
-
     //Transformation matrix between cameras in stereo fisheye
     cv::Mat mTrl;
 

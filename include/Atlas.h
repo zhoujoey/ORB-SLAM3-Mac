@@ -22,8 +22,6 @@
 #include "Map.h"
 #include "MapPoint.h"
 #include "KeyFrame.h"
-#include "GeometricCamera.h"
-#include "Pinhole.h"
 
 #include <set>
 #include <mutex>
@@ -39,9 +37,7 @@ class MapPoint;
 class KeyFrame;
 class KeyFrameDatabase;
 class Frame;
-class Pinhole;
 
-//BOOST_CLASS_EXPORT_GUID(Pinhole, "Pinhole")
 
 class Atlas
 {
@@ -50,19 +46,15 @@ class Atlas
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-        //ar.template register_type<Pinhole>();
 
         // Save/load the set of maps, the set is broken in libboost 1.58 for ubuntu 16.04
         //ar & mspMaps;
         ar & mvpBackupMaps;
-        //ar & mvpBackupCamPin;
-        //ar & mvpBackupCamKan;
         // Need to save/load the static Id from Frame, KeyFrame, MapPoint and Map
         ar & Map::nNextId;
         ar & Frame::nNextId;
         ar & KeyFrame::nNextId;
         ar & MapPoint::nNextId;
-        ar & GeometricCamera::nNextId;
         ar & mnLastInitKFidMap;
     }
 
@@ -130,9 +122,6 @@ protected:
     std::vector<Map*> mvpBackupMaps;
     Map* mpCurrentMap;
 
-    std::vector<Pinhole*> mvpBackupCamPin;
-
-    //Pinhole testCam;
     std::mutex mMutexAtlas;
 
     unsigned long int mnLastInitKFidMap;

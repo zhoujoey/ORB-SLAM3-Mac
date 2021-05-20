@@ -48,8 +48,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mbToBeErased(false), mbBad(false), 
     mHalfBaseline(F.mb/2),      // 计算双目相机长度的一半
 	mpMap(pMap), 
-	mbCurrentPlaceRecognition(false), 
-    mpCamera(F.mpCamera), 
+	mbCurrentPlaceRecognition(false),
     mTrl(F.mTrl), mnNumberOfOpt(0)
 {
 

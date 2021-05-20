@@ -97,8 +97,6 @@ private:
     // Ransac sets
     vector<vector<size_t> > mvSets;
 
-    GeometricCamera* mpCamera;
-
 };
 
 } //namespace ORB_SLAM

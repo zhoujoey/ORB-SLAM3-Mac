@@ -14,7 +14,6 @@
 
 #include<mutex>
 #include<chrono>
-#include <include/CameraModels/Pinhole.h>
 
 
 using namespace std;
@@ -66,10 +65,6 @@ Tracking::Tracking(
     float fy = fSettings["Camera.fy"];
     float cx = fSettings["Camera.cx"];
     float cy = fSettings["Camera.cy"];
-
-    vector<float> vCamCalib{fx,fy,cx,cy};
-
-    mpCamera = new Pinhole(vCamCalib);
 
     cv::Mat K = cv::Mat::eye(3,3,CV_32F);
     K.at<float>(0,0) = fx;
@@ -207,18 +202,18 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im,const double &timestamp)
     if (mSensor == System::MONOCULAR)
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-            mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+            mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
         else
-            mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+            mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
     }
     else if(mSensor == System::IMU_MONOCULAR)
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
         {
-            mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+            mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
         }
         else
-            mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+            mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
     }
 
     Track();

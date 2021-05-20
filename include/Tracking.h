@@ -18,8 +18,6 @@
 #include "MapDrawer.h"
 #include "System.h"
 #include "ImuTypes.h"
-
-#include "GeometricCamera.h"
 #include <mutex>
 #include <unordered_set>
 
@@ -430,8 +428,6 @@ protected:
     double mTime_PosePred;
     double mTime_LocalMapTrack;
     double mTime_NewKF_Dec;
-
-    GeometricCamera* mpCamera;
 
 public:
     cv::Mat mImRight;

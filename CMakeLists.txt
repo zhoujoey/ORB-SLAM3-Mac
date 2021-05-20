@@ -44,7 +44,6 @@ find_package(Pangolin REQUIRED)
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
-${PROJECT_SOURCE_DIR}/include/CameraModels
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 )
@@ -74,7 +73,6 @@ src/Initializer.cc
 src/Viewer.cc
 src/ImuTypes.cc
 src/G2oTypes.cc
-src/CameraModels/Pinhole.cpp
 src/OptimizableTypes.cpp
 )
 

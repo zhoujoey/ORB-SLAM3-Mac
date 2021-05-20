@@ -2,28 +2,11 @@
 
 namespace ORB_SLAM3 {
     bool EdgeSE3ProjectXYZOnlyPose::read(std::istream& is){
-        for (int i=0; i<2; i++){
-            is >> _measurement[i];
-        }
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++) {
-                is >> information()(i,j);
-                if (i!=j)
-                    information()(j,i)=information()(i,j);
-            }
         return true;
     }
 
     bool EdgeSE3ProjectXYZOnlyPose::write(std::ostream& os) const {
 
-        for (int i=0; i<2; i++){
-            os << measurement()[i] << " ";
-        }
-
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++){
-                os << " " <<  information()(i,j);
-            }
         return os.good();
     }
 
@@ -41,32 +24,22 @@ namespace ORB_SLAM3 {
                      -z , 0.f, x, 0.f, 1.f, 0.f,
                      y ,  -x , 0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXi = -pCamera->projectJac(xyz_trans) * SE3deriv;
+        float fx = pK.at<float>(0,0);
+        float fy = pK.at<float>(1,1);
+        Eigen::Matrix<double,2,3> proj_jac;
+        proj_jac << fx/xyz_trans[2], 0.f, -1*fx*xyz_trans[0]/(xyz_trans[2]* xyz_trans[2]),
+                    0.f, fy/xyz_trans[2], -1*fy*xyz_trans[1]/(xyz_trans[2]* xyz_trans[2]);
+
+        _jacobianOplusXi = -proj_jac * SE3deriv;
     }
 
     bool EdgeSE3ProjectXYZOnlyPoseToBody::read(std::istream& is){
-        for (int i=0; i<2; i++){
-            is >> _measurement[i];
-        }
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++) {
-                is >> information()(i,j);
-                if (i!=j)
-                    information()(j,i)=information()(i,j);
-            }
+
         return true;
     }
 
     bool EdgeSE3ProjectXYZOnlyPoseToBody::write(std::ostream& os) const {
 
-        for (int i=0; i<2; i++){
-            os << measurement()[i] << " ";
-        }
-
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++){
-                os << " " <<  information()(i,j);
-            }
         return os.good();
     }
 
@@ -84,36 +57,22 @@ namespace ORB_SLAM3 {
         SE3deriv << 0.f, z_w,   -y_w, 1.f, 0.f, 0.f,
                 -z_w , 0.f, x_w, 0.f, 1.f, 0.f,
                 y_w ,  -x_w , 0.f, 0.f, 0.f, 1.f;
-
-        _jacobianOplusXi = -pCamera->projectJac(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
+        float fx = pK.at<float>(0,0);
+        float fy = pK.at<float>(1,1);
+        Eigen::Matrix<double,2,3> proj_jac;
+        proj_jac << fx/X_r[2], 0.f, -1*fx*X_r[0]/(X_r[2]* X_r[2]),
+                    0.f, fy/X_r[2], -1*fy*X_r[1]/(X_r[2]* X_r[2]);
+        _jacobianOplusXi = -proj_jac * mTrl.rotation().toRotationMatrix() * SE3deriv;
     }
 
     EdgeSE3ProjectXYZ::EdgeSE3ProjectXYZ() : BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, g2o::VertexSE3Expmap>() {
     }
 
     bool EdgeSE3ProjectXYZ::read(std::istream& is){
-        for (int i=0; i<2; i++){
-            is >> _measurement[i];
-        }
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++) {
-                is >> information()(i,j);
-                if (i!=j)
-                    information()(j,i)=information()(i,j);
-            }
         return true;
     }
 
     bool EdgeSE3ProjectXYZ::write(std::ostream& os) const {
-
-        for (int i=0; i<2; i++){
-            os << measurement()[i] << " ";
-        }
-
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++){
-                os << " " <<  information()(i,j);
-            }
         return os.good();
     }
 
@@ -128,45 +87,30 @@ namespace ORB_SLAM3 {
         double x = xyz_trans[0];
         double y = xyz_trans[1];
         double z = xyz_trans[2];
+        float fx = pK.at<float>(0,0);
+        float fy = pK.at<float>(1,1);
+        Eigen::Matrix<double,2,3> proj_jac;
+        proj_jac << fx/xyz_trans[2], 0.f, -1*fx*xyz_trans[0]/(xyz_trans[2]* xyz_trans[2]),
+                    0.f, fy/xyz_trans[2], -1*fy*xyz_trans[1]/(xyz_trans[2]* xyz_trans[2]);
 
-        auto projectJac = -pCamera->projectJac(xyz_trans);
-
-        _jacobianOplusXi =  projectJac * T.rotation().toRotationMatrix();
+        _jacobianOplusXi =  -proj_jac * T.rotation().toRotationMatrix();
 
         Eigen::Matrix<double,3,6> SE3deriv;
         SE3deriv << 0.f, z,   -y, 1.f, 0.f, 0.f,
                 -z , 0.f, x, 0.f, 1.f, 0.f,
                 y ,  -x , 0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXj = projectJac * SE3deriv;
+        _jacobianOplusXj = -proj_jac * SE3deriv;
     }
 
     EdgeSE3ProjectXYZToBody::EdgeSE3ProjectXYZToBody() : BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, g2o::VertexSE3Expmap>() {
     }
 
     bool EdgeSE3ProjectXYZToBody::read(std::istream& is){
-        for (int i=0; i<2; i++){
-            is >> _measurement[i];
-        }
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++) {
-                is >> information()(i,j);
-                if (i!=j)
-                    information()(j,i)=information()(i,j);
-            }
         return true;
     }
 
     bool EdgeSE3ProjectXYZToBody::write(std::ostream& os) const {
-
-        for (int i=0; i<2; i++){
-            os << measurement()[i] << " ";
-        }
-
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++){
-                os << " " <<  information()(i,j);
-            }
         return os.good();
     }
 
@@ -179,8 +123,13 @@ namespace ORB_SLAM3 {
         Eigen::Vector3d X_w = vi->estimate();
         Eigen::Vector3d X_l = T_lw.map(X_w);
         Eigen::Vector3d X_r = mTrl.map(T_lw.map(X_w));
+        float fx = pK.at<float>(0,0);
+        float fy = pK.at<float>(1,1);
+        Eigen::Matrix<double,2,3> proj_jac;
+        proj_jac << fx/X_r[2], 0.f, -1*fx*X_r[0]/(X_r[2]* X_r[2]),
+                    0.f, fy/X_r[2], -1*fy*X_r[1]/(X_r[2]* X_r[2]);
 
-        _jacobianOplusXi =  -pCamera->projectJac(X_r) * T_rw.rotation().toRotationMatrix();
+        _jacobianOplusXi =  -proj_jac * T_rw.rotation().toRotationMatrix();
 
         double x = X_l[0];
         double y = X_l[1];
@@ -191,7 +140,7 @@ namespace ORB_SLAM3 {
                 -z , 0.f, x, 0.f, 1.f, 0.f,
                 y ,  -x , 0.f, 0.f, 0.f, 1.f;
 
-        _jacobianOplusXj = -pCamera->projectJac(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
+        _jacobianOplusXj = -proj_jac * mTrl.rotation().toRotationMatrix() * SE3deriv;
     }
 
 
@@ -203,43 +152,11 @@ namespace ORB_SLAM3 {
 
     bool VertexSim3Expmap::read(std::istream& is)
     {
-        g2o::Vector7d cam2world;
-        for (int i=0; i<6; i++){
-            is >> cam2world[i];
-        }
-        is >> cam2world[6];
-
-        float nextParam;
-        for(size_t i = 0; i < pCamera1->size(); i++){
-            is >> nextParam;
-            pCamera1->setParameter(nextParam,i);
-        }
-
-        for(size_t i = 0; i < pCamera2->size(); i++){
-            is >> nextParam;
-            pCamera2->setParameter(nextParam,i);
-        }
-
-        setEstimate(g2o::Sim3(cam2world).inverse());
         return true;
     }
 
     bool VertexSim3Expmap::write(std::ostream& os) const
     {
-        g2o::Sim3 cam2world(estimate().inverse());
-        g2o::Vector7d lv=cam2world.log();
-        for (int i=0; i<7; i++){
-            os << lv[i] << " ";
-        }
-
-        for(size_t i = 0; i < pCamera1->size(); i++){
-            os << pCamera1->getParameter(i) << " ";
-        }
-
-        for(size_t i = 0; i < pCamera2->size(); i++){
-            os << pCamera2->getParameter(i) << " ";
-        }
-
         return os.good();
     }
 
@@ -250,30 +167,11 @@ namespace ORB_SLAM3 {
 
     bool EdgeSim3ProjectXYZ::read(std::istream& is)
     {
-        for (int i=0; i<2; i++)
-        {
-            is >> _measurement[i];
-        }
-
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++) {
-                is >> information()(i,j);
-                if (i!=j)
-                    information()(j,i)=information()(i,j);
-            }
         return true;
     }
 
     bool EdgeSim3ProjectXYZ::write(std::ostream& os) const
     {
-        for (int i=0; i<2; i++){
-            os  << _measurement[i] << " ";
-        }
-
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++){
-                os << " " <<  information()(i,j);
-            }
         return os.good();
     }
 
@@ -284,30 +182,12 @@ namespace ORB_SLAM3 {
 
     bool EdgeInverseSim3ProjectXYZ::read(std::istream& is)
     {
-        for (int i=0; i<2; i++)
-        {
-            is >> _measurement[i];
-        }
 
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++) {
-                is >> information()(i,j);
-                if (i!=j)
-                    information()(j,i)=information()(i,j);
-            }
         return true;
     }
 
     bool EdgeInverseSim3ProjectXYZ::write(std::ostream& os) const
     {
-        for (int i=0; i<2; i++){
-            os  << _measurement[i] << " ";
-        }
-
-        for (int i=0; i<2; i++)
-            for (int j=i; j<2; j++){
-                os << " " <<  information()(i,j);
-            }
         return os.good();
     }
 

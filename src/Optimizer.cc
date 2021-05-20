@@ -167,8 +167,7 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
                     rk->setDelta(thHuber2D);
                 }
 
-                e->pCamera = pKF->mpCamera;
-
+                e->pK = pKF->mK;
                 optimizer.addEdge(e);
 
                 vpEdgesMono.push_back(e);
@@ -815,7 +814,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                 e->setRobustKernel(rk);
                 rk->setDelta(deltaMono);
 
-                e->pCamera = pFrame->mpCamera;
+                e->pK = pFrame->mK;
                 cv::Mat Xw = pMP->GetWorldPos();
                 e->Xw[0] = Xw.at<float>(0);
                 e->Xw[1] = Xw.at<float>(1);
@@ -1192,8 +1191,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, vector<Ke
                     e->setRobustKernel(rk);
                     rk->setDelta(thHuberMono);
 
-                    e->pCamera = pKFi->mpCamera;
-
+                    e->pK = pKFi->mK;
                     optimizer.addEdge(e);
                     vpEdgesMono.push_back(e);
                     vpEdgeKFMono.push_back(pKFi);
@@ -1647,8 +1645,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
                     e->setRobustKernel(rk);
                     rk->setDelta(thHuberMono);
 
-                    e->pCamera = pKFi->mpCamera;
-
+                    e->pK = pKFi->mK;
                     optimizer.addEdge(e);
                     vpEdgesMono.push_back(e);
                     vpEdgeKFMono.push_back(pKFi);
@@ -3362,7 +3359,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     vSim3->setEstimate(g2oS12);
     vSim3->setId(0);
     vSim3->setFixed(false);
-    vSim3->pCamera1 = pKF1->mpCamera;
+    vSim3->pK1 = pKF1->mK;
     optimizer.addVertex(vSim3);
 
     // Set MapPoint vertices
@@ -4256,7 +4253,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, bool
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pKFi->mpCamera->uncertainty2(obs);
+                    const float unc2 = 1.0;
 
                     const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave]/unc2;
                     e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
@@ -4287,7 +4284,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, bool
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pKFi->mpCamera->uncertainty2(obs.head(2));
+                    const float unc2 = 1.0;
 
                     const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave]/unc2;
                     e->setInformation(Eigen::Matrix3d::Identity()*invSigma2);
@@ -5692,7 +5689,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
                 e->setRobustKernel(rk);
                 rk->setDelta(thHuber2D);
 
-                e->pCamera = pKF->mpCamera;
+                e->pK = pKF->mK;
                 //cout << "-- Calibration loads" << endl;
 
                 optimizer.addEdge(e);
@@ -6659,7 +6656,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs);
+                    const float unc2 = 1.0;
 
                     const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
                     e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
@@ -6690,7 +6687,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs.head(2));
+                    const float unc2 = 1.0;
 
                     const float &invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
                     e->setInformation(Eigen::Matrix3d::Identity()*invSigma2);
@@ -7019,7 +7016,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs);
+                    const float unc2 = 1.0;
 
                     const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
                     e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
@@ -7050,7 +7047,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     e->setMeasurement(obs);
 
                     // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs.head(2));
+                    const float unc2 = 1.0;
 
                     const float &invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
                     e->setInformation(Eigen::Matrix3d::Identity()*invSigma2);

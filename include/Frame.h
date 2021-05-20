@@ -36,7 +36,6 @@ namespace ORB_SLAM3
 class MapPoint;
 class KeyFrame;
 class ConstraintPoseImu;
-class GeometricCamera;
 class ORBextractor;
 /**
  * @brief 帧
@@ -61,7 +60,7 @@ public:
      */
     Frame(const Frame &frame);
 
-    Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
+    Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
@@ -427,7 +426,6 @@ private:
     std::mutex *mpMutexImu;
 
 public:
-    GeometricCamera* mpCamera;
 
     //Grid for the right image
     std::vector<std::size_t> mGridRight[64][48];

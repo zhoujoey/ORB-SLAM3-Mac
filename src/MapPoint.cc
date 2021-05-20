@@ -518,7 +518,6 @@ void MapPoint::PrintObservations()
         KeyFrame* pKFi = mit->first;
         tuple<int,int> indexes = mit->second;
         int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
-        cout << "--OBS in KF " << pKFi->mnId << " in map " << pKFi->GetMap()->GetId() << endl;
     }
 }
 

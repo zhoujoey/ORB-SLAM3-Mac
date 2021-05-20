@@ -6,10 +6,8 @@
 #include "ORBextractor.h"
 #include "Converter.h"
 #include "ORBmatcher.h"
-#include "GeometricCamera.h"
 
 #include <thread>
-#include <include/CameraModels/Pinhole.h>
 
 namespace ORB_SLAM3
 {
@@ -70,7 +68,6 @@ Frame::Frame(const Frame &frame):
 	 mpLastKeyFrame(frame.mpLastKeyFrame), 
 	 mbImuPreintegrated(frame.mbImuPreintegrated), 
 	 mpMutexImu(frame.mpMutexImu),
-     mpCamera(frame.mpCamera),  
 	 mTrl(frame.mTrl.clone())
 {
 	//逐个复制，其实这里也是深拷贝
@@ -106,16 +103,15 @@ Frame::Frame(const Frame &frame):
  * @param[in] thDepth                           //区分远近点的深度阈值
  */
 Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
-		GeometricCamera* pCamera, 
+		cv::Mat &K, 
 		cv::Mat &distCoef, const float &bf, const float &thDepth, 
 		Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),
 	mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),mTimeStamp(timeStamp), 
-	mK(static_cast<Pinhole*>(pCamera)->toK()), 
-	mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
+	 mK(K.clone()), 
+	 mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), 
-	 mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), 
-	 mpCamera(pCamera)
+	 mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false)
 {
     // Frame ID
 	// Step 1 帧的ID 自增
@@ -174,7 +170,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
         mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
 		// 表示一个图像像素相当于多少个图像网格行（高）
         mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
-        cv::Mat K = static_cast<Pinhole*>(mpCamera)->toK();
+
 		//给类的静态成员变量复制
         fx = K.at<float>(0,0);
         fy = K.at<float>(1,1);

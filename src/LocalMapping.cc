@@ -415,8 +415,6 @@ void LocalMapping::CreateNewMapPoints()
 
         KeyFrame* pKF2 = vpNeighKFs[i];
 
-        GeometricCamera* pCamera1 = mpCurrentKeyFrame->mpCamera, *pCamera2 = pKF2->mpCamera;
-
         // Check first that baseline is not too short
         // 相邻的关键帧光心在世界坐标系中的坐标
         cv::Mat Ow2 = pKF2->GetCameraCenter();
@@ -495,9 +493,12 @@ void LocalMapping::CreateNewMapPoints()
             const float kp2_ur = pKF2->mvuRight[idx2];
 
             // Check parallax between rays
-            cv::Mat xn1 = pCamera1->unprojectMat(kp1.pt);
-            cv::Mat xn2 = pCamera2->unprojectMat(kp2.pt);
+            // Step 6.2：利用匹配点反投影得到视差角
+            // 特征点反投影,其实得到的是在各自相机坐标系下的一个非归一化的方向向量,和这个点的反投影射线重合
+            cv::Mat xn1 = (cv::Mat_<float>(3,1) << (kp1.pt.x-cx1)*invfx1, (kp1.pt.y-cy1)*invfy1, 1.0);
+            cv::Mat xn2 = (cv::Mat_<float>(3,1) << (kp2.pt.x-cx2)*invfx2, (kp2.pt.y-cy2)*invfy2, 1.0);
 
+            // 由相机坐标系转到世界坐标系(得到的是那条反投影射线的一个同向向量在世界坐标系下的表示,还是只能够表示方向)，得到视差角余弦值
             cv::Mat ray1 = Rwc1*xn1;
             cv::Mat ray2 = Rwc2*xn2;
             // 匹配点射线夹角余弦值
@@ -563,12 +564,14 @@ void LocalMapping::CreateNewMapPoints()
             const float y1 = Rcw1.row(1).dot(x3Dt)+tcw1.at<float>(1);
             const float invz1 = 1.0/z1;
 
-            cv::Point2f uv1 = pCamera1->project(cv::Point3f(x1,y1,z1));
-            float errX1 = uv1.x - kp1.pt.x;
-            float errY1 = uv1.y - kp1.pt.y;
-
-            if((errX1*errX1+errY1*errY1)>5.991*sigmaSquare1)
-                continue;
+                // 单目情况下
+                float u1 = fx1*x1*invz1+cx1;
+                float v1 = fy1*y1*invz1+cy1;
+                float errX1 = u1 - kp1.pt.x;
+                float errY1 = v1 - kp1.pt.y;
+                // 假设测量有一个像素的偏差，2自由度卡方检验阈值是5.991
+                if((errX1*errX1+errY1*errY1)>5.991*sigmaSquare1)
+                    continue;
 
 
             //Check reprojection error in second keyframe
@@ -578,11 +581,12 @@ void LocalMapping::CreateNewMapPoints()
             const float y2 = Rcw2.row(1).dot(x3Dt)+tcw2.at<float>(1);
             const float invz2 = 1.0/z2;
 
-            cv::Point2f uv2 = pCamera2->project(cv::Point3f(x2,y2,z2));
-            float errX2 = uv2.x - kp2.pt.x;
-            float errY2 = uv2.y - kp2.pt.y;
-            if((errX2*errX2+errY2*errY2)>5.991*sigmaSquare2)
-                continue;
+                float u2 = fx2*x2*invz2+cx2;
+                float v2 = fy2*y2*invz2+cy2;
+                float errX2 = u2 - kp2.pt.x;
+                float errY2 = v2 - kp2.pt.y;
+                if((errX2*errX2+errY2*errY2)>5.991*sigmaSquare2)
+                    continue;
 
 
             //Check scale consistency
@@ -803,8 +807,8 @@ cv::Mat LocalMapping::ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2)
     // 得到 t12 的反对称矩阵
     cv::Mat t12x = SkewSymmetricMatrix(t12);
 
-    const cv::Mat &K1 = pKF1->mpCamera->toK();
-    const cv::Mat &K2 = pKF2->mpCamera->toK();
+    const cv::Mat &K1 = pKF1->mK;
+    const cv::Mat &K2 = pKF2->mK;
 
     // Essential Matrix: t12叉乘R12
     // Fundamental Matrix: inv(K1)*E*inv(K2)
@@ -1119,7 +1123,7 @@ void LocalMapping::RequestResetActiveMap(Map* pMap)
 
 void LocalMapping::ResetIfRequested()
 {
-    {
+
         unique_lock<mutex> lock(mMutexReset);
         if(mbResetRequested)
         {
@@ -1144,7 +1148,7 @@ void LocalMapping::ResetIfRequested()
 
             mbResetRequestedActiveMap = false;
         }
-    }
+
 
 }
 

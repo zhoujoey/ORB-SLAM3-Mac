@@ -53,6 +53,17 @@
     "valarray": "cpp",
     "algorithm": "cpp",
     "memory": "cpp",
-    "core": "cpp"
+    "core": "cpp",
+    "bit": "cpp",
+    "condition_variable": "cpp",
+    "map": "cpp",
+    "set": "cpp",
+    "iterator": "cpp",
+    "memory_resource": "cpp",
+    "optional": "cpp",
+    "random": "cpp",
+    "string": "cpp",
+    "string_view": "cpp",
+    "variant": "cpp"
   }
 }

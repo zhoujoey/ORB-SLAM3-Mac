@@ -19,9 +19,6 @@
 #include "Atlas.h"
 #include "Viewer.h"
 
-#include "GeometricCamera.h"
-#include "Pinhole.h"
-
 namespace ORB_SLAM3
 {
 
@@ -64,7 +61,6 @@ void Atlas::CreateNewMap()
             mnLastInitKFidMap = mpCurrentMap->GetMaxKFid()+1; //The init KF is the next of current maximum
 
         mpCurrentMap->SetStoredMap();
-        cout << "Saved map with ID: " << mpCurrentMap->GetId() << endl;
 
         //if(mHasViewer)
         //    mpViewer->AddMapToCreateThumbnail(mpCurrentMap);
@@ -79,7 +75,6 @@ void Atlas::CreateNewMap()
 void Atlas::ChangeMap(Map* pMap)
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    cout << "Chage to map with id: " << pMap->GetId() << endl;
     if(mpCurrentMap){
         mpCurrentMap->SetStoredMap();
     }

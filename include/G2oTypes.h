@@ -43,7 +43,6 @@ namespace ORB_SLAM3
 
 class KeyFrame;
 class Frame;
-class GeometricCamera;
 
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
 typedef Eigen::Matrix<double, 9, 1> Vector9d;
@@ -97,8 +96,7 @@ public:
     std::vector<Eigen::Matrix3d> Rcb, Rbc;
     std::vector<Eigen::Vector3d> tcb, tbc;
     double bf;
-    std::vector<GeometricCamera*> pCamera;
-
+    std::vector<cv::Mat> pK;
     // For posegraph 4DoF
     Eigen::Matrix3d Rwb0;
     Eigen::Matrix3d DR;

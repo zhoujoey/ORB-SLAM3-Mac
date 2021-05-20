@@ -22,9 +22,8 @@
 #include "Thirdparty/g2o/g2o/core/base_unary_edge.h"
 #include <Thirdparty/g2o/g2o/types/types_six_dof_expmap.h>
 #include <Thirdparty/g2o/g2o/types/sim3.h>
-
+#include <opencv2/core/core.hpp>
 #include <Eigen/Geometry>
-#include <include/CameraModels/GeometricCamera.h>
 
 
 namespace ORB_SLAM3 {
@@ -41,7 +40,14 @@ public:
     void computeError()  {
         const g2o::VertexSE3Expmap* v1 = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
         Eigen::Vector2d obs(_measurement);
-        _error = obs-pCamera->project(v1->estimate().map(Xw));
+        Eigen::Vector3d tV = v1->estimate().map(Xw);
+        Eigen::Vector2d res;
+        float fx = pK.at<float>(0,0);
+        float fy = pK.at<float>(1,1);
+        float cx = pK.at<float>(0,2);
+        float cy = pK.at<float>(1,2);
+        res<<fx * tV[0]/tV[2] + cx, fy * tV[1]/tV[2] + cy;
+        _error = obs - res;
     }
 
     bool isDepthPositive() {
@@ -53,7 +59,7 @@ public:
     virtual void linearizeOplus();
 
     Eigen::Vector3d Xw;
-    GeometricCamera* pCamera;
+    cv::Mat pK;
 };
 
 class  EdgeSE3ProjectXYZOnlyPoseToBody: public  g2o::BaseUnaryEdge<2, Eigen::Vector2d, g2o::VertexSE3Expmap>{
@@ -69,7 +75,13 @@ public:
     void computeError()  {
         const g2o::VertexSE3Expmap* v1 = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
         Eigen::Vector2d obs(_measurement);
-        _error = obs-pCamera->project((mTrl * v1->estimate()).map(Xw));
+        Eigen::Vector3d tV = (mTrl * v1->estimate()).map(Xw);
+        Eigen::Vector2d res;
+        float fx = pK.at<float>(0,0);
+        float fy = pK.at<float>(1,1);
+        float cx = pK.at<float>(0,2);
+        float cy = pK.at<float>(1,2);
+        res<<fx * tV[0]/tV[2] + cx, fy * tV[1]/tV[2] + cy;          
     }
 
     bool isDepthPositive() {
@@ -81,8 +93,7 @@ public:
     virtual void linearizeOplus();
 
     Eigen::Vector3d Xw;
-    GeometricCamera* pCamera;
-
+    cv::Mat pK;
     g2o::SE3Quat mTrl;
 };
 
@@ -100,7 +111,14 @@ public:
         const g2o::VertexSE3Expmap* v1 = static_cast<const g2o::VertexSE3Expmap*>(_vertices[1]);
         const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
         Eigen::Vector2d obs(_measurement);
-        _error = obs-pCamera->project(v1->estimate().map(v2->estimate()));
+        Eigen::Vector3d tV = v1->estimate().map(v2->estimate());
+        Eigen::Vector2d res;
+        float fx = pK.at<float>(0,0);
+        float fy = pK.at<float>(1,1);
+        float cx = pK.at<float>(0,2);
+        float cy = pK.at<float>(1,2);
+        res<<fx * tV[0]/tV[2] + cx, fy * tV[1]/tV[2] + cy;
+        _error = obs - res;
     }
 
     bool isDepthPositive() {
@@ -111,7 +129,7 @@ public:
 
     virtual void linearizeOplus();
 
-    GeometricCamera* pCamera;
+    cv::Mat pK;
 };
 
 class  EdgeSE3ProjectXYZToBody: public  g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, g2o::VertexSE3Expmap>{
@@ -128,7 +146,14 @@ public:
         const g2o::VertexSE3Expmap* v1 = static_cast<const g2o::VertexSE3Expmap*>(_vertices[1]);
         const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
         Eigen::Vector2d obs(_measurement);
-        _error = obs-pCamera->project((mTrl * v1->estimate()).map(v2->estimate()));
+        Eigen::Vector3d tV = (mTrl * v1->estimate()).map(v2->estimate());
+        Eigen::Vector2d res;
+        float fx = pK.at<float>(0,0);
+        float fy = pK.at<float>(1,1);
+        float cx = pK.at<float>(0,2);
+        float cy = pK.at<float>(1,2);
+        res<<fx * tV[0]/tV[2] + cx, fy * tV[1]/tV[2] + cy;
+        _error = obs - res;     
     }
 
     bool isDepthPositive() {
@@ -139,7 +164,7 @@ public:
 
     virtual void linearizeOplus();
 
-    GeometricCamera* pCamera;
+    cv::Mat pK;
     g2o::SE3Quat mTrl;
 };
 
@@ -166,8 +191,7 @@ public:
         setEstimate(s*estimate());
     }
 
-    GeometricCamera* pCamera1, *pCamera2;
-
+    cv::Mat pK1, pK2;
     bool _fix_scale;
 };
 
@@ -186,10 +210,15 @@ public:
         const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
 
         Eigen::Vector2d obs(_measurement);
-        _error = obs-v1->pCamera1->project(v1->estimate().map(v2->estimate()));
+        Eigen::Vector3d tV = v1->estimate().map(v2->estimate());
+        Eigen::Vector2d res;
+        float fx = v1->pK1.at<float>(0,0);
+        float fy = v1->pK1.at<float>(1,1);
+        float cx = v1->pK1.at<float>(0,2);
+        float cy = v1->pK1.at<float>(1,2);
+        res<<fx * tV[0]/tV[2] + cx, fy * tV[1]/tV[2] + cy;
+        _error = obs - res;
     }
-
-    // virtual void linearizeOplus();
 
 };
 
@@ -207,10 +236,15 @@ public:
         const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
 
         Eigen::Vector2d obs(_measurement);
-        _error = obs-v1->pCamera1->project((v1->estimate().inverse().map(v2->estimate())));
+        Eigen::Vector3d tV = (v1->estimate().inverse().map(v2->estimate()));
+        Eigen::Vector2d res;
+        float fx = v1->pK1.at<float>(0,0);
+        float fy = v1->pK1.at<float>(1,1);
+        float cx = v1->pK1.at<float>(0,2);
+        float cy = v1->pK1.at<float>(1,2);
+        res<<fx * tV[0]/tV[2] + cx, fy * tV[1]/tV[2] + cy;  
+        _error = obs - res;      
     }
-
-    // virtual void linearizeOplus();
 
 };
 

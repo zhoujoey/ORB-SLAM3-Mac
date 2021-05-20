@@ -606,10 +606,8 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<KeyFrame*> &vpBowCand, 
                 mTcm = solver.iterate(20,bNoMore, vbInliers, nInliers, bConverge);
             }
 
-            //cout << "Num inliers: " << nInliers << endl;
             if(bConverge)
             {
-                //cout <<"BoW: " << nInliers << " inliers in Sim3Solver" << endl;
 
                 // Match by reprojection
                 //int nNumCovisibles = 5;
