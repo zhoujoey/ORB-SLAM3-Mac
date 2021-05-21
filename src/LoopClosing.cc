@@ -456,12 +456,11 @@ bool LoopClosing::DetectAndReffineSim3FromLastKF(KeyFrame* pCurrentKF, KeyFrame*
         cv::Mat mTwm = pMatchedKF->GetPoseInverse();
         g2o::Sim3 gSwm(Converter::toMatrix3d(mTwm.rowRange(0, 3).colRange(0, 3)),Converter::toVector3d(mTwm.rowRange(0, 3).col(3)),1.0);
         g2o::Sim3 gScm = gScw * gSwm;
-        Eigen::Matrix<double, 7, 7> mHessian7x7;
 
         bool bFixedScale = mbFixScale;       // TODO CHECK; Solo para el monocular inertial
         if(mpTracker->mSensor==System::IMU_MONOCULAR && !pCurrentKF->GetMap()->GetIniertialBA2())
             bFixedScale=false;
-        int numOptMatches = Optimizer::OptimizeSim3(mpCurrentKF, pMatchedKF, vpMatchedMPs, gScm, 10, bFixedScale, mHessian7x7, true);
+        int numOptMatches = Optimizer::OptimizeSim3(mpCurrentKF, pMatchedKF, vpMatchedMPs, gScm, 10, bFixedScale);
         cout << "REFFINE-SIM3: Optimize Sim3 from last KF with " << numOptMatches << " inliers" << endl;
 
 
@@ -655,13 +654,12 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<KeyFrame*> &vpBowCand, 
                 if(numProjMatches >= nProjMatches)
                 {
                     // Optimize Sim3 transformation with every matches
-                    Eigen::Matrix<double, 7, 7> mHessian7x7;
 
                     bool bFixedScale = mbFixScale;
                     if(mpTracker->mSensor==System::IMU_MONOCULAR && !mpCurrentKF->GetMap()->GetIniertialBA2())
                         bFixedScale=false;
 
-                    int numOptMatches = Optimizer::OptimizeSim3(mpCurrentKF, pKFi, vpMatchedMP, gScm, 10, mbFixScale, mHessian7x7, true);
+                    int numOptMatches = Optimizer::OptimizeSim3(mpCurrentKF, pKFi, vpMatchedMP, gScm, 10, mbFixScale);
                     //cout <<"BoW: " << numOptMatches << " inliers in the Sim3 optimization" << endl;
                     //cout << "Inliers in Sim3 optimization: " << numOptMatches << endl;
 
@@ -1027,10 +1025,6 @@ void LoopClosing::CorrectLoop()
             // Make sure connections are updated
             pKFi->UpdateConnections();
         }
-        // TODO Check this index increasement
-        mpMap->IncreaseChangeIndex();
-        cout << "LC: end correcting KeyFrames" << endl;
-
 
         // Start Loop Fusion
         // Update matched map points and replace if duplicated
@@ -1687,7 +1681,6 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
             }
 
             pActiveMap->InformNewBigChange();
-            pActiveMap->IncreaseChangeIndex();
 
             mpLocalMapper->Release();
 

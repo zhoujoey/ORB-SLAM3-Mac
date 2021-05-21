@@ -1297,8 +1297,6 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     mpTracker->mState=Tracking::OK;
     bInitializing = false;
 
-    mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
-
     return;
 }
 
@@ -1362,9 +1360,6 @@ void LocalMapping::ScaleRefinement()
     mlNewKeyFrames.clear();
 
     double t_inertial_only = std::chrono::duration_cast<std::chrono::duration<double> >(t1 - t0).count();
-
-    // To perform pose-inertial opt w.r.t. last keyframe
-    mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
 
     return;
 }
