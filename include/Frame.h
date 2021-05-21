@@ -428,7 +428,6 @@ private:
 public:
 
     std::vector<std::size_t> mGridRight[64][48];
-
     cv::Mat mTrl;
 };
 

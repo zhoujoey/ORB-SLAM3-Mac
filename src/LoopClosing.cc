@@ -927,9 +927,9 @@ void LoopClosing::CorrectLoop()
 
     // Ensure current keyframe is updated
     cout << "start updating connections" << endl;
-    assert(mpCurrentKF->GetMap()->CheckEssentialGraph());
+
     mpCurrentKF->UpdateConnections();
-    assert(mpCurrentKF->GetMap()->CheckEssentialGraph());
+
 
     // Retrive keyframes connected to the current keyframe and compute corrected Sim3 pose by propagation
     mvpCurrentConnectedKFs = mpCurrentKF->GetVectorCovisibleKeyFrames();
@@ -1276,11 +1276,6 @@ void LoopClosing::MergeLocal2()
 
     cout << "end updating current map" << endl;
 
-    // Critical zone
-    bool good = pCurrentMap->CheckEssentialGraph();
-    /*if(!good)
-        cout << "BAD ESSENTIAL GRAPH!!" << endl;*/
-
     cout << "Update essential graph" << endl;
     // mpCurrentKF->UpdateConnections(); // to put at false 
     pMergeMap->GetOriginKF()->SetFirstConnection(false);
@@ -1302,11 +1297,6 @@ void LoopClosing::MergeLocal2()
 
     cout << "end update essential graph" << endl;
 
-    good = pCurrentMap->CheckEssentialGraph();
-    if(!good)
-        cout << "BAD ESSENTIAL GRAPH 1!!" << endl;
-
-    cout << "Update relationship between KFs" << endl;
     vector<MapPoint*> vpCheckFuseMapPoint; // MapPoint vector from current map to allow to fuse duplicated points with the old map (merge)
     vector<KeyFrame*> vpCurrentConnectedKFs;
 
@@ -1349,19 +1339,11 @@ void LoopClosing::MergeLocal2()
 
     cout << "MergeMap init ID: " << pMergeMap->GetInitKFid() << "       CurrMap init ID: " << pCurrentMap->GetInitKFid() << endl;
 
-    good = pCurrentMap->CheckEssentialGraph();
-    if(!good)
-        cout << "BAD ESSENTIAL GRAPH 2!!" << endl;
-
     cout << "start SearchAndFuse" << endl;
     SearchAndFuse(vpCurrentConnectedKFs, vpCheckFuseMapPoint);
     cout << "end SearchAndFuse" << endl;
 
     cout << "MergeMap init ID: " << pMergeMap->GetInitKFid() << "       CurrMap init ID: " << pCurrentMap->GetInitKFid() << endl;
-
-    good = pCurrentMap->CheckEssentialGraph();
-    if(!good)
-        cout << "BAD ESSENTIAL GRAPH 3!!" << endl;
 
     cout << "Init to update connections" << endl;
 
@@ -1384,19 +1366,11 @@ void LoopClosing::MergeLocal2()
 
     cout << "MergeMap init ID: " << pMergeMap->GetInitKFid() << "       CurrMap init ID: " << pCurrentMap->GetInitKFid() << endl;
 
-    good = pCurrentMap->CheckEssentialGraph();
-    if(!good)
-        cout << "BAD ESSENTIAL GRAPH 4!!" << endl;
-
     // TODO Check: If new map is too small, we suppose that not informaiton can be propagated from new to old map
     if (numKFnew<10){
         mpLocalMapper->Release();
         return;
     }
-
-    good = pCurrentMap->CheckEssentialGraph();
-    if(!good)
-        cout << "BAD ESSENTIAL GRAPH 5!!" << endl;
 
     // Perform BA
     bool bStopFlag=false;
@@ -1404,10 +1378,6 @@ void LoopClosing::MergeLocal2()
     cout << "start MergeInertialBA" << endl;
     Optimizer::MergeInertialBA(pCurrKF, mpMergeMatchedKF, &bStopFlag, pCurrentMap,CorrectedSim3);
     cout << "end MergeInertialBA" << endl;
-
-    good = pCurrentMap->CheckEssentialGraph();
-    if(!good)
-        cout << "BAD ESSENTIAL GRAPH 6!!" << endl;
 
     // Release Local Mapping.
     mpLocalMapper->Release();
@@ -1418,7 +1388,6 @@ void LoopClosing::MergeLocal2()
 
 void LoopClosing::CheckObservations(set<KeyFrame*> &spKFsMap1, set<KeyFrame*> &spKFsMap2)
 {
-    cout << "----------------------" << endl;
     for(KeyFrame* pKFi1 : spKFsMap1)
     {
         map<KeyFrame*, int> mMatchedMP;
@@ -1588,7 +1557,6 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
 
 
     int idx =  mnFullBAIdx;
-    // Optimizer::GlobalBundleAdjustemnt(mpMap,10,&mbStopGBA,nLoopKF,false);
 
     // Update all MapPoints and KeyFrames
     // Local Mapping was active during BA, that means that there might be new keyframes
@@ -1617,7 +1585,6 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
             unique_lock<mutex> lock(pActiveMap->mMutexMapUpdate);
             // cout << "LC: Update Map Mutex adquired" << endl;
 
-            //pActiveMap->PrintEssentialGraph();
             // Correct keyframes starting at map first keyframe
             list<KeyFrame*> lpKFtoCheck(pActiveMap->mvpKeyFrameOrigins.begin(),pActiveMap->mvpKeyFrameOrigins.end());
 

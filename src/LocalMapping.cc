@@ -85,7 +85,6 @@ void LocalMapping::Run()
             }
 
             mbAbortBA = false;
-            int num_FixedKF_BA = 0;
 
             if(!CheckNewKeyFrames() && !stopRequested())
             {
@@ -115,7 +114,7 @@ void LocalMapping::Run()
                     else
                     {
                         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA);
+                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpCurrentKeyFrame->GetMap());
                         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
                     }
                 }
@@ -132,6 +131,8 @@ void LocalMapping::Run()
 
 
                 // Check redundant local Keyframes
+                // Step 7 检测并剔除当前帧相邻的关键帧中冗余的关键帧
+                // 冗余的判定：该关键帧的90%的地图点可以被其它关键帧观测到
                 KeyFrameCulling();
 
                 if ((mTinit<100.0f) && mbInertial)
@@ -964,6 +965,7 @@ void LocalMapping::KeyFrameCulling()
 
         if((pKF->mnId==0) || pKF->isBad())
             continue;
+		// Step 2：提取每个共视关键帧的地图点
         const vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
 
         // 记录某个点被观测次数，后面并未使用

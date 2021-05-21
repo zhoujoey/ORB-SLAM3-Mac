@@ -150,8 +150,6 @@ public:
     bool GetIniertialBA1();
     bool GetIniertialBA2();
 
-    void PrintEssentialGraph();
-    bool CheckEssentialGraph();
     void ChangeId(long unsigned int nId);
 
     unsigned int GetLowerKFID();
