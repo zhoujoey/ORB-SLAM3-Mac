@@ -8,7 +8,7 @@
 #include "ORBmatcher.h"
 #include <thread>
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 //下一个生成的帧的ID,这里是初始化类的静态成员变量

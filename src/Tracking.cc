@@ -27,7 +27,7 @@ using namespace std;
 // "v"表示vector数据类型
 // 'l'表示list数据类型
 // "KF"表示KeyFrame数据类型   
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 ///构造函数
@@ -2399,7 +2399,7 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
 {
     Map * pMap = pCurrentKeyFrame->GetMap();
     unsigned int index = mnFirstFrameId;
-    list<ORB_SLAM3::KeyFrame*>::iterator lRit = mlpReferences.begin();
+    list<ORB_SLAM2::KeyFrame*>::iterator lRit = mlpReferences.begin();
     list<bool>::iterator lbL = mlbLost.begin();
     for(list<cv::Mat>::iterator lit=mlRelativeFramePoses.begin(),lend=mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lbL++)
     {

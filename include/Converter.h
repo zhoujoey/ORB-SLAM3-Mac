@@ -12,7 +12,7 @@
  * @details 该命名空间中包含了所有的ORB-SLAM2的组件。
  * 
  */
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 /**

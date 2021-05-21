@@ -12,7 +12,7 @@
 #include <mutex>
 #include <opencv2/opencv.hpp>
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 	
 /**

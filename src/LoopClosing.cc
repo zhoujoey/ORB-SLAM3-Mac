@@ -29,7 +29,7 @@
 #include<thread>
 
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale):

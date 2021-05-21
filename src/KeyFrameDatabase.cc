@@ -7,7 +7,7 @@
 
 using namespace std;
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 // 构造函数

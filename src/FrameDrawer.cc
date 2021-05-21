@@ -6,7 +6,7 @@
 
 #include<mutex>
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 //构造函数
 FrameDrawer::FrameDrawer(Map* pMap):mpMap(pMap)

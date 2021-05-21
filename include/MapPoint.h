@@ -9,7 +9,7 @@
 #include <mutex>
 
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 class KeyFrame;

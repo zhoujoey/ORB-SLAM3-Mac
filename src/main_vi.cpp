@@ -134,7 +134,7 @@ int main(int argc, char **argv)
     vTimesTrack.resize(nImages);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(vocPath, yamlPath, ORB_SLAM3::System::IMU_MONOCULAR, true);
+    ORB_SLAM2::System SLAM(vocPath, yamlPath, ORB_SLAM2::System::IMU_MONOCULAR, true);
     int proccIm = 0;
 #ifdef __APPLE__
         // Moving main loop to a separate thread so that we could run UI thread on the main thread.
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 #endif
 
     cv::Mat im;
-    vector<ORB_SLAM3::IMU::Point> vImuMeas;
+    vector<ORB_SLAM2::IMU::Point> vImuMeas;
     proccIm = 0;
     for (std::size_t ni = 0; ni < nImages; ni++, proccIm++)
     {
@@ -163,7 +163,7 @@ int main(int argc, char **argv)
             while(vTimestampsImu[first_imu]<=vTimestampsCam[ni])
             {
 
-                    vImuMeas.push_back(ORB_SLAM3::IMU::Point(vAcc[first_imu].x,vAcc[first_imu].y,vAcc[first_imu].z,
+                    vImuMeas.push_back(ORB_SLAM2::IMU::Point(vAcc[first_imu].x,vAcc[first_imu].y,vAcc[first_imu].z,
                                                              vGyro[first_imu].x,vGyro[first_imu].y,vGyro[first_imu].z,
                                                              vTimestampsImu[first_imu]));
                     first_imu++;

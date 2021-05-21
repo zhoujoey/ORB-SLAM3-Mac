@@ -11,7 +11,7 @@
 #include <pangolin/pangolin.h>		//可视化界面
 #include <iomanip>					//主要是对cin,cout之类的一些操纵运算子
 #include <unistd.h>
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 //系统的构造函数，将会启动其他的线程
@@ -86,7 +86,7 @@ System::System(const string &strVocFile,					//词典文件路径
     mpLocalMapper = new LocalMapping(mpMap, 				//指定使iomanip
     								 mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR);	// TODO 为什么这个要设置成为MONOCULAR？？？
     //运行这个局部建图线程
-    mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,
+    mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,
 								mpLocalMapper);
 
     //Initialize the Loop Closing thread and launchiomanip
@@ -94,7 +94,7 @@ System::System(const string &strVocFile,					//词典文件路径
     							   mpKeyFrameDatabase, 			//关键帧数据库
 									mpVocabulary, 
 									mSensor!=MONOCULAR); // mSensor!=MONOCULAR);
-    mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, 
+    mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, 
 									mpLoopCloser);
 
     //Initialize the Viewer thread and launch

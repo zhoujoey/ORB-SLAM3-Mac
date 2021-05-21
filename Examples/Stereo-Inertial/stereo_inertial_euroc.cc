@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     cout.precision(17);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_STEREO, true);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::IMU_STEREO, true);
 
     cv::Mat imLeft, imRight, imLeftRect, imRightRect;
     for (seq = 0; seq<num_seq; seq++)
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
         std::thread runthread([&]() {  // Start in new thread
     #endif
         // Seq loop
-        vector<ORB_SLAM3::IMU::Point> vImuMeas;
+        vector<ORB_SLAM2::IMU::Point> vImuMeas;
         double t_rect = 0;
         int num_rect = 0;
         int proccIm = 0;
@@ -217,7 +217,7 @@ int main(int argc, char **argv)
             if(ni>0)
                 while(vTimestampsImu[seq][first_imu[seq]]<=vTimestampsCam[seq][ni]) // while(vTimestampsImu[first_imu]<=vTimestampsCam[ni])
                 {
-                    vImuMeas.push_back(ORB_SLAM3::IMU::Point(vAcc[seq][first_imu[seq]].x,vAcc[seq][first_imu[seq]].y,vAcc[seq][first_imu[seq]].z,
+                    vImuMeas.push_back(ORB_SLAM2::IMU::Point(vAcc[seq][first_imu[seq]].x,vAcc[seq][first_imu[seq]].y,vAcc[seq][first_imu[seq]].z,
                                                              vGyro[seq][first_imu[seq]].x,vGyro[seq][first_imu[seq]].y,vGyro[seq][first_imu[seq]].z,
                                                              vTimestampsImu[seq][first_imu[seq]]));
                     first_imu[seq]++;

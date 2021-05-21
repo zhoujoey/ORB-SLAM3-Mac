@@ -19,7 +19,7 @@
 #include "ImuTypes.h"
 #include<iostream>
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 namespace IMU

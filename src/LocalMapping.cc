@@ -7,7 +7,7 @@
 #include<mutex>
 #include<chrono>
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 LocalMapping::LocalMapping(Map *pMap, const float bMonocular, bool bInertial):

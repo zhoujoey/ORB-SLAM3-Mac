@@ -2,7 +2,7 @@
 
 #include<mutex>
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 long unsigned int Map::nNextId=0;
@@ -485,4 +485,4 @@ void Map::SetLastMapChange(int currentChangeId)
     mnMapChangeNotified = currentChangeId;
 }
 
-} //namespace ORB_SLAM3
+} //namespace ORB_SLAM2

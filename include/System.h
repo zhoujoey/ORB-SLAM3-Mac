@@ -19,7 +19,7 @@
 #include "ImuTypes.h"
 
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 //要用到的其他类的前视声明

@@ -19,7 +19,7 @@
 #include "G2oTypes.h"
 #include "ImuTypes.h"
 #include "Converter.h"
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 ImuCamPose::ImuCamPose(KeyFrame *pKF):its(0)

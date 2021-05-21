@@ -31,7 +31,7 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 namespace IMU

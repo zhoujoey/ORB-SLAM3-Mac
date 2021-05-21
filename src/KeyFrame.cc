@@ -4,7 +4,7 @@
 #include "ImuTypes.h"
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 // 下一个关键帧的id

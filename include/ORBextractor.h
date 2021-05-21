@@ -6,7 +6,7 @@
 #include <opencv/cv.h>
 
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 class ExtractorNode

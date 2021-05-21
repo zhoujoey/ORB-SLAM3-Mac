@@ -16,8 +16,8 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ORB_SLAM3_OPTIMIZABLETYPES_H
-#define ORB_SLAM3_OPTIMIZABLETYPES_H
+#ifndef ORB_SLAM2_OPTIMIZABLETYPES_H
+#define ORB_SLAM2_OPTIMIZABLETYPES_H
 
 #include "Thirdparty/g2o/g2o/core/base_unary_edge.h"
 #include <Thirdparty/g2o/g2o/types/types_six_dof_expmap.h>
@@ -26,7 +26,7 @@
 #include <Eigen/Geometry>
 
 
-namespace ORB_SLAM3 {
+namespace ORB_SLAM2 {
 class  EdgeSE3ProjectXYZOnlyPose: public  g2o::BaseUnaryEdge<2, Eigen::Vector2d, g2o::VertexSE3Expmap>{
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -196,7 +196,7 @@ public:
 };
 
 
-class EdgeSim3ProjectXYZ : public  g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, ORB_SLAM3::VertexSim3Expmap>
+class EdgeSim3ProjectXYZ : public  g2o::BaseBinaryEdge<2, Eigen::Vector2d, g2o::VertexSBAPointXYZ, ORB_SLAM2::VertexSim3Expmap>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -206,7 +206,7 @@ public:
 
     void computeError()
     {
-        const ORB_SLAM3::VertexSim3Expmap* v1 = static_cast<const ORB_SLAM3::VertexSim3Expmap*>(_vertices[1]);
+        const ORB_SLAM2::VertexSim3Expmap* v1 = static_cast<const ORB_SLAM2::VertexSim3Expmap*>(_vertices[1]);
         const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
 
         Eigen::Vector2d obs(_measurement);
@@ -232,7 +232,7 @@ public:
 
     void computeError()
     {
-        const ORB_SLAM3::VertexSim3Expmap* v1 = static_cast<const ORB_SLAM3::VertexSim3Expmap*>(_vertices[1]);
+        const ORB_SLAM2::VertexSim3Expmap* v1 = static_cast<const ORB_SLAM2::VertexSim3Expmap*>(_vertices[1]);
         const g2o::VertexSBAPointXYZ* v2 = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
 
         Eigen::Vector2d obs(_measurement);
@@ -250,4 +250,4 @@ public:
 
 }
 
-#endif //ORB_SLAM3_OPTIMIZABLETYPES_H
+#endif //ORB_SLAM2_OPTIMIZABLETYPES_H

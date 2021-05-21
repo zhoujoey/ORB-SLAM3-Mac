@@ -15,7 +15,7 @@
 
 using namespace std;
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 // 要用到的一些阈值

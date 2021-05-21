@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     cout.precision(17);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(vocPath, yamlPath, ORB_SLAM3::System::MONOCULAR, true);
+    ORB_SLAM2::System SLAM(vocPath, yamlPath, ORB_SLAM2::System::MONOCULAR, true);
 
 #ifdef __APPLE__
         // Moving main loop to a separate thread so that we could run UI thread on the main thread.

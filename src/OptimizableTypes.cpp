@@ -1,6 +1,6 @@
 #include "OptimizableTypes.h"
 
-namespace ORB_SLAM3 {
+namespace ORB_SLAM2 {
     bool EdgeSE3ProjectXYZOnlyPose::read(std::istream& is){
         return true;
     }

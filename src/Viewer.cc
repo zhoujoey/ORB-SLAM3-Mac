@@ -4,7 +4,7 @@
 
 #include <mutex>
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 //查看器的构造函数

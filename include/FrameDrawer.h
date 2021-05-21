@@ -12,7 +12,7 @@
 #include <unordered_set>
 
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 class Tracking;

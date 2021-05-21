@@ -19,7 +19,7 @@
 #include "Thirdparty/g2o/g2o/core/robust_kernel_impl.h"
 #include "Thirdparty/g2o/g2o/solvers/linear_solver_dense.h"
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 class LoopClosing;
@@ -129,6 +129,6 @@ public:
     void static InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale);
 };
 
-} //namespace ORB_SLAM3
+} //namespace ORB_SLAM2
 
 #endif // OPTIMIZER_H

@@ -10,7 +10,7 @@
 using namespace cv;
 using namespace std;
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 //理解下面代码的过程中需要用到一些知识：
 //高斯图像金字塔，参考[https://blog.csdn.net/xbcreal/article/details/52629465]	

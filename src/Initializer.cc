@@ -7,7 +7,7 @@
 //这里使用到了多线程的加速技术
 #include<thread>
 using namespace std;
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 /**

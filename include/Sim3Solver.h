@@ -8,7 +8,7 @@
 
 
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 /** @brief Sim3 求解器 */

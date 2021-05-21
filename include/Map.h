@@ -13,7 +13,7 @@
 #include <boost/serialization/base_object.hpp>
 
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 class MapPoint;
@@ -199,6 +199,6 @@ protected:
     std::mutex mMutexMap;
 };
 
-} //namespace ORB_SLAM3
+} //namespace ORB_SLAM2
 
 #endif // MAP_H

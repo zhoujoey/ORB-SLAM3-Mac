@@ -46,7 +46,7 @@
 
 using namespace std;
 
-namespace ORB_SLAM3
+namespace ORB_SLAM2
 {
 
 // 在大体的pipeline上和Sim3Solver差不多,都是 构造->设置RANSAC参数->外部调用迭代函数,进行计算->得到计算的结果
