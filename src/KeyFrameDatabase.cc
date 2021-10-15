@@ -1,7 +1,6 @@
 #include "KeyFrameDatabase.h"
 
 #include "KeyFrame.h"
-#include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 
 #include <mutex>
 
@@ -29,7 +28,7 @@ void KeyFrameDatabase::add(KeyFrame *pKF)
     unique_lock<mutex> lock(mMutex);
 
     // 将该关键帧词袋向量里每一个单词更新倒排索引
-    for(DBoW2::BowVector::const_iterator vit= pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
+    for(DBoW3::BowVector::const_iterator vit= pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
         mvInvertedFile[vit->first].push_back(pKF);
 }
 
@@ -45,7 +44,7 @@ void KeyFrameDatabase::erase(KeyFrame* pKF)
 
     // Erase elements in the Inverse File for the entry
     // 每一个KeyFrame包含多个words，遍历mvInvertedFile中的这些words，然后在word中删除该KeyFrame
-    for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
+    for(DBoW3::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
     {
         // List of keyframes that share the word
         // 取出包含该单词的所有关键帧列表
@@ -97,7 +96,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float mi
         // words是检测图像是否匹配的枢纽，遍历该pKF的每一个word
         // mBowVec 内部实际存储的是std::map<WordId, WordValue>
         // WordId 和 WordValue 表示Word在叶子中的id 和权重
-        for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
+        for(DBoW3::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
         {
             // 提取所有包含该word的KeyFrame
             list<KeyFrame*> &lKFs =   mvInvertedFile[vit->first];
@@ -248,7 +247,7 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
 
         spConnectedKF = pKF->GetConnectedKeyFrames();
 
-        for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
+        for(DBoW3::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
         {
             list<KeyFrame*> &lKFs =   mvInvertedFile[vit->first];
 
@@ -391,7 +390,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F)
 
         // mBowVec 内部实际存储的是std::map<WordId, WordValue>
         // WordId 和 WordValue 表示Word在叶子中的id 和权重
-        for(DBoW2::BowVector::const_iterator vit=F->mBowVec.begin(), vend=F->mBowVec.end(); vit != vend; vit++)
+        for(DBoW3::BowVector::const_iterator vit=F->mBowVec.begin(), vend=F->mBowVec.end(); vit != vend; vit++)
         {
             // 根据倒排索引，提取所有包含该wordid的所有KeyFrame
             list<KeyFrame*> &lKFs = mvInvertedFile[vit->first];

@@ -41,7 +41,7 @@
 #include <vector>
 #include <cmath>
 #include <opencv2/core/core.hpp>
-#include "Thirdparty/DBoW2/DUtils/Random.h"
+
 #include <algorithm>
 
 using namespace std;
@@ -235,7 +235,7 @@ cv::Mat PnPsolver::iterate(int nIterations, bool &bNoMore, vector<bool> &vbInlie
         // 随机选取4组（默认数目）最小集合
         for(short i = 0; i < mRansacMinSet; ++i)
         {
-            int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size()-1);
+            int randi = rand() % vAvailableIndices.size();
 
             // 将生成的这个索引映射到给定帧的特征点id
             int idx = vAvailableIndices[randi];

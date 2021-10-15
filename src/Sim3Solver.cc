@@ -7,8 +7,6 @@
 #include "KeyFrame.h"
 #include "ORBmatcher.h"
 
-#include "Thirdparty/DBoW2/DUtils/Random.h"
-
 namespace ORB_SLAM2
 {
 
@@ -217,7 +215,7 @@ cv::Mat Sim3Solver::iterate(int nIterations, bool &bNoMore, vector<bool> &vbInli
         for(short i = 0; i < 3; ++i)
         {
             // DBoW3中的随机数生成函数
-            int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size()-1);
+            int randi = rand() % vAvailableIndices.size();
 
             int idx = vAvailableIndices[randi];
 
@@ -301,7 +299,7 @@ cv::Mat Sim3Solver::iterate(int nIterations, bool &bNoMore, vector<bool> &vbInli
         // Get min set of points
         for(short i = 0; i < 3; ++i)
         {
-            int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size()-1);
+            int randi = rand() % vAvailableIndices.size(); // 2020.4.10
 
             int idx = vAvailableIndices[randi];
 

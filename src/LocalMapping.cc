@@ -139,31 +139,31 @@ void LocalMapping::Run()
                 {
                     if(mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState==Tracking::OK) // Enter here everytime local-mapping is called
                     {
-                        if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
-                            if (mTinit>5.0f)
-                            {
-                                cout << "start VIBA 1" << endl;
-                                mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
-                                if (mbMonocular)
-                                    InitializeIMU(1.f, 1e5, true); // 1.f, 1e5
-                                else
-                                    InitializeIMU(1.f, 1e5, true); // 1.f, 1e5
-
-                                cout << "end VIBA 1" << endl;
-                            }
-                        }
-                        else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
-                            if (mTinit>15.0f){ // 15.0f
-                                cout << "start VIBA 2" << endl;
-                                mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
-                                if (mbMonocular)
-                                    InitializeIMU(0.f, 0.f, true); // 0.f, 0.f
-                                else
-                                    InitializeIMU(0.f, 0.f, true);
-
-                                cout << "end VIBA 2" << endl;
-                            }
-                        }
+//                        if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
+//                            if (mTinit>5.0f)
+//                            {
+//                                cout << "start VIBA 1" << endl;
+//                                mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
+//                                if (mbMonocular)
+//                                    InitializeIMU(1.f, 1e5, true); // 1.f, 1e5
+//                                else
+//                                    InitializeIMU(1.f, 1e5, true); // 1.f, 1e5
+//
+//                                cout << "end VIBA 1" << endl;
+//                            }
+//                        }
+//                        else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
+//                            if (mTinit>15.0f){ // 15.0f
+//                                cout << "start VIBA 2" << endl;
+//                                mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
+//                                if (mbMonocular)
+//                                    InitializeIMU(0.f, 0.f, true); // 0.f, 0.f
+//                                else
+//                                    InitializeIMU(0.f, 0.f, true);
+//
+//                                cout << "end VIBA 2" << endl;
+//                            }
+//                        }
 
                         // scale refinement
                         if (((mpMap->KeyFramesInMap())<=100) &&

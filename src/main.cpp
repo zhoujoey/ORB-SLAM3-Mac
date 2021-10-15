@@ -65,8 +65,8 @@ int main(int argc, char **argv)
     string rgbpath = dataset + "/camera/images";
     string imuFile = dataset + "/imu/data.csv";
     string configPath = (string)argv[2];
-//    string vocPath = configPath + "/orbvoc_9_5.bin";
-    string vocPath = configPath + "/ORBvoc.bin";
+    string vocPath = configPath + "/orbvoc_9_5.bin";
+//    string vocPath = configPath + "/ORBvoc.bin";
     string strFile = dataset + "/camera/data.csv";
 
     string yamlPath = configPath + "/st.yaml";

@@ -73,6 +73,17 @@ src/Viewer.cc
 src/ImuTypes.cc
 src/G2oTypes.cc
 src/OptimizableTypes.cpp
+
+        DBow3/DBoW3.h
+        DBow3/DescManip.h
+        DBow3/ScoringObject.h
+        DBow3/quicklz.h
+        DBow3/Vocabulary.cpp
+        DBow3/FeatureVector.cpp
+        DBow3/BowVector.cpp
+        DBow3/DescManip.cpp
+        DBow3/ScoringObject.cpp
+        DBow3/quicklz.c
 )
 
 
@@ -80,7 +91,7 @@ target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
-${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.dylib
+#${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.dylib
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.dylib
 
 )

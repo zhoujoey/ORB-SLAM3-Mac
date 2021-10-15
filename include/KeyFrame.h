@@ -2,8 +2,7 @@
 #define KEYFRAME_H
 
 #include "MapPoint.h"
-#include "Thirdparty/DBoW2/DBoW2/BowVector.h"
-#include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+
 #include "ORBVocabulary.h"
 #include "ORBextractor.h"
 #include "Frame.h"
@@ -369,12 +368,12 @@ public:
     // Vector of words to represent images 
     // mBowVec 内部实际存储的是std::map<WordId, WordValue>
     // WordId 和 WordValue 表示Word在叶子中的id 和权重
-    DBoW2::BowVector mBowVec; 
+    DBoW3::BowVector mBowVec; 
 
     // Vector of nodes with indexes of local features 
     // 内部实际存储 std::map<NodeId, std::vector<unsigned int> >
     // NodeId 表示节点id，std::vector<unsigned int> 中实际存的是该节点id下所有特征点在图像中的索引
-    DBoW2::FeatureVector mFeatVec; 
+    DBoW3::FeatureVector mFeatVec; 
 
     /// Pose relative to parent (this is computed when bad flag is activated)
     cv::Mat mTcp;

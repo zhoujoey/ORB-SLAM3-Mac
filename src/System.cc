@@ -46,7 +46,9 @@ System::System(const string &strVocFile,					//词典文件路径
     mpVocabulary = new ORBVocabulary();
     //获取字典加载状态
 //    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
-	bool bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
+//	bool bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
+    bool bVocLoad = true;
+	mpVocabulary->load(strVocFile);
     //如果加载失败，就输出调试信息
     if(!bVocLoad)
     {

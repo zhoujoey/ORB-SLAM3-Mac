@@ -645,74 +645,10 @@ void Tracking::Track()
                     //根据恒速模型失败了，只能根据参考关键帧来跟踪
                     bOK = TrackReferenceKeyFrame();
             }
-
-
-            if (!bOK)
-            {
-                if ( mCurrentFrame.mnId<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
-                        (mSensor==System::IMU_MONOCULAR ))
-                {
-                    mState = LOST;
-                }
-                else if(pCurrentMap->KeyFramesInMap()>10)
-                {
-                    cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << endl;
-                    mState = RECENTLY_LOST;
-                    mTimeStampLost = mCurrentFrame.mTimeStamp;
-                    //mCurrentFrame.SetPose(mLastFrame.mTcw);
-                }
-                else
-                {
-                    mState = LOST;
-                }
-            }
         }
         else
         {
-
-            if (mState == RECENTLY_LOST)
-            {
-
-                bOK = true;
-                if((mSensor == System::IMU_MONOCULAR ))
-                {
-                    if(pCurrentMap->isImuInitialized())
-                        PredictStateIMU();
-                    else
-                        bOK = false;
-
-                    if (mCurrentFrame.mTimeStamp-mTimeStampLost>5)
-                    {
-                        mState = LOST;
-                        bOK=false;
-                    }
-                }
-                else
-                {
-                    // TODO fix relocalization
-                    bOK = Relocalization();
-                    if(!bOK)
-                    {
-                        mState = LOST;
-                        bOK=false;
-                    }
-                }
-            }
-            else if (mState == LOST)
-            {
-
-                if (mpMap->KeyFramesInMap()<10)
-                {
-                    mpSystem->Reset();
-                    cout << "Reseting current map..." << endl;
-                }
-
-                if(mpLastKeyFrame)
-                    mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
-
-
-                return;
-            }
+            bOK = Relocalization();
         }
 
 
@@ -729,72 +665,48 @@ void Tracking::Track()
 
         //根据上面的操作来判断是否追踪成功
         if(bOK)
-            mState = OK;
-        else if (mState == OK)
         {
-            if (mSensor == System::IMU_MONOCULAR )
+            mState = OK;
+            this->mnLostCount = 0;
+        }
+        else
+        {
+            this->mnLostCount++;
+            if (this->mnLostCount > 200)
             {
-                if(!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2())
-                {
-                    cout << "IMU is not or recently initialized. Reseting active map..." << endl;
-                    mpSystem->Reset();
-                }
-
-                mState=RECENTLY_LOST;
+                mState = LOST;
             }
             else
-                mState=LOST; // visual to lost
-
-            if(mCurrentFrame.mnId>mnLastRelocFrameId+mMaxFrames)
             {
-                mTimeStampLost = mCurrentFrame.mTimeStamp;
+                mInitialFrame = Frame(mCurrentFrame);//借用mInitializeFrame存储当前帧信息
+                mState = RECENTLY_LOST;
+                return;
             }
         }
 
-        // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it shluld be once mCurrFrame is completely modified)
-        if((mCurrentFrame.mnId<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) && ((mSensor == System::IMU_MONOCULAR) ) && pCurrentMap->isImuInitialized())
-        {
-            // TODO check this situation
-            Frame* pF = new Frame(mCurrentFrame);
-            pF->mpPrevFrame = new Frame(mLastFrame);
 
-            // Load preintegration
-            pF->mpImuPreintegratedFrame = new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame);
-        }
-
-        if(pCurrentMap->isImuInitialized())
-        {
-            if(bOK)
-            {
-                if(mCurrentFrame.mnId==(mnLastRelocFrameId+mnFramesToResetIMU))
-                {
-                    cout << "RESETING FRAME!!!" << endl;
-                }
-                else if(mCurrentFrame.mnId>(mnLastRelocFrameId+30))
-                    mLastBias = mCurrentFrame.mImuBias;
-            }
-        }
 
         // Update drawer
         mpFrameDrawer->Update(this);
         if(!mCurrentFrame.mTcw.empty())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
-        if(bOK || mState==RECENTLY_LOST)
+//        if(bOK || mState==RECENTLY_LOST)
+        if(bOK)
         {
             // Update motion model
-            if(!mLastFrame.mTcw.empty() && !mCurrentFrame.mTcw.empty())
-            {
-                // 更新恒速运动模型 TrackWithMotionModel 中的mVelocity
-                cv::Mat LastTwc = cv::Mat::eye(4,4,CV_32F);
-                mLastFrame.GetRotationInverse().copyTo(LastTwc.rowRange(0,3).colRange(0,3));
-                mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0,3).col(3));
-                // mVelocity = Tcl = Tcw * Twl,表示上一帧到当前帧的变换， 其中 Twl = LastTwc
-                mVelocity = mCurrentFrame.mTcw*LastTwc; 
-            }
-            else
-                //否则速度为空
-                mVelocity = cv::Mat();
+//            if(!mLastFrame.mTcw.empty() && !mCurrentFrame.mTcw.empty())
+//            {
+//                // 更新恒速运动模型 TrackWithMotionModel 中的mVelocity
+//                cv::Mat LastTwc = cv::Mat::eye(4,4,CV_32F);
+//                mLastFrame.GetRotationInverse().copyTo(LastTwc.rowRange(0,3).colRange(0,3));
+//                mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0,3).col(3));
+//                // mVelocity = Tcl = Tcw * Twl,表示上一帧到当前帧的变换， 其中 Twl = LastTwc
+//                mVelocity = mCurrentFrame.mTcw*LastTwc;
+//            }
+//            else
+//                //否则速度为空
+//                mVelocity = cv::Mat();
 
             if(mSensor == System::IMU_MONOCULAR )
                 mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
@@ -852,18 +764,9 @@ void Tracking::Track()
         // Step 10 如果初始化后不久就跟踪失败，并且relocation也没有搞定，只能重新Reset
         if(mState==LOST)
         {
-            if(pCurrentMap->KeyFramesInMap()<=5)
-            {
-                mpSystem->Reset();
-                return;
-            }
-            if ((mSensor == System::IMU_MONOCULAR) )
-                if (!mpMap->isImuInitialized())
-                {
-                    mpSystem->Reset();
-                    return;
-                }
-
+            //zhouwei 0728 if get lost reinit in current map.
+            mState=NOT_INITIALIZED;
+            return;
         }
 
         if(!mCurrentFrame.mpReferenceKF)
@@ -1447,7 +1350,6 @@ bool Tracking::TrackWithMotionModel()
                 nmatchesMap++;
         }
     }
-
     if (mSensor == System::IMU_MONOCULAR )
         return true;
     else
@@ -1555,8 +1457,8 @@ bool Tracking::TrackLocalMap()
     if((mnMatchesInliers>10)&&(mState==RECENTLY_LOST))
         return true;
 
-
-	return mnMatchesInliers>= (mSensor == System::IMU_MONOCULAR) ? 15:30;
+    return mnMatchesInliers>= 15;
+//	return mnMatchesInliers>= (mSensor == System::IMU_MONOCULAR) ? 15:30;
 
 }
 
@@ -2082,41 +1984,35 @@ void Tracking::UpdateLocalKeyFrames()
 bool Tracking::Relocalization()
 {
     // Compute Bag of Words Vector
-    // Step 1：计算当前帧特征点的词袋向量
     mCurrentFrame.ComputeBoW();
+
+    vector<MapPoint*> vMaps = this->mpMap->GetAllMapPoints();
+    vector<KeyFrame*> vKFs = this->mpMap->GetAllKeyFrames();
 
     // Relocalization is performed when tracking is lost
     // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
-    // Step 2：用词袋找到与当前帧相似的候选关键帧
     vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame);
-    
-    // 如果没有候选关键帧，则退出
-    if(vpCandidateKFs.empty()) 
-	{
+
+    if(vpCandidateKFs.empty())
         return false;
-    }
 
     const int nKFs = vpCandidateKFs.size();
-
+    cout<<nKFs<<endl;
     // We perform first an ORB matching with each candidate
     // If enough matches are found we setup a PnP solver
     ORBmatcher matcher(0.75,true);
-    //每个关键帧的解算器
+
     vector<PnPsolver*> vpPnPsolvers;
     vpPnPsolvers.resize(nKFs);
 
-    //每个关键帧和当前帧中特征点的匹配关系
     vector<vector<MapPoint*> > vvpMapPointMatches;
     vvpMapPointMatches.resize(nKFs);
-    
-    //放弃某个关键帧的标记
+
     vector<bool> vbDiscarded;
     vbDiscarded.resize(nKFs);
 
-    //有效的候选关键帧数目
     int nCandidates=0;
 
-    // Step 3：遍历所有的候选关键帧，通过词袋进行快速匹配，用匹配结果初始化PnP Solver
     for(int i=0; i<nKFs; i++)
     {
         KeyFrame* pKF = vpCandidateKFs[i];
@@ -2124,26 +2020,17 @@ bool Tracking::Relocalization()
             vbDiscarded[i] = true;
         else
         {
-            // 当前帧和候选关键帧用BoW进行快速匹配，匹配结果记录在vvpMapPointMatches，nmatches表示匹配的数目
             int nmatches = matcher.SearchByBoW(pKF,mCurrentFrame,vvpMapPointMatches[i]);
-            // 如果和当前帧的匹配数小于15,那么只能放弃这个关键帧
-            if(nmatches<15)
+            cout<<"nmatches is "<<nmatches<<endl;
+            if(nmatches<10)
             {
                 vbDiscarded[i] = true;
                 continue;
             }
             else
             {
-                // 如果匹配数目够用，用匹配结果初始化EPnPsolver
-                // 为什么用EPnP? 因为计算复杂度低，精度高
                 PnPsolver* pSolver = new PnPsolver(mCurrentFrame,vvpMapPointMatches[i]);
-                pSolver->SetRansacParameters(
-                    0.99,   //用于计算RANSAC迭代次数理论值的概率
-                    10,     //最小内点数, 但是要注意在程序中实际上是min(给定最小内点数,最小集,内点数理论值),不一定使用这个
-                    300,    //最大迭代次数
-                    4,      //最小集(求解这个问题在一次采样中所需要采样的最少的点的个数,对于Sim3是3,EPnP是4),参与到最小内点数的确定过程中
-                    0.5,    //这个是表示(最小内点数/样本总数);实际上的RANSAC正常退出的时候所需要的最小内点数其实是根据这个量来计算得到的
-                    5.991); // 自由度为2的卡方检验的阈值,程序中还会根据特征点所在的图层对这个阈值进行缩放
+                pSolver->SetRansacParameters(0.99,10,300,4,0.5,5.991);
                 vpPnPsolvers[i] = pSolver;
                 nCandidates++;
             }
@@ -2152,54 +2039,39 @@ bool Tracking::Relocalization()
 
     // Alternatively perform some iterations of P4P RANSAC
     // Until we found a camera pose supported by enough inliers
-    // 这里的 P4P RANSAC是Epnp，每次迭代需要4个点
-    // 是否已经找到相匹配的关键帧的标志
     bool bMatch = false;
     ORBmatcher matcher2(0.9,true);
 
-    // Step 4: 通过一系列操作,直到找到能够匹配上的关键帧
-    // 为什么搞这么复杂？答：是担心误闭环
     while(nCandidates>0 && !bMatch)
     {
-        //遍历当前所有的候选关键帧
         for(int i=0; i<nKFs; i++)
         {
-            // 忽略放弃的
             if(vbDiscarded[i])
                 continue;
-    
-            //内点标记
-            vector<bool> vbInliers;     
-            
-            //内点数
+
+            // Perform 5 Ransac Iterations
+            vector<bool> vbInliers;
             int nInliers;
-            
-            // 表示RANSAC已经没有更多的迭代次数可用 -- 也就是说数据不够好，RANSAC也已经尽力了。。。
             bool bNoMore;
 
-            // Step 4.1：通过EPnP算法估计姿态，迭代5次
             PnPsolver* pSolver = vpPnPsolvers[i];
             cv::Mat Tcw = pSolver->iterate(5,bNoMore,vbInliers,nInliers);
 
             // If Ransac reachs max. iterations discard keyframe
-            // bNoMore 为true 表示已经超过了RANSAC最大迭代次数，就放弃当前关键帧
             if(bNoMore)
             {
                 vbDiscarded[i]=true;
                 nCandidates--;
             }
-
             // If a Camera Pose is computed, optimize
             if(!Tcw.empty())
             {
-                //  Step 4.2：如果EPnP 计算出了位姿，对内点进行BA优化
                 Tcw.copyTo(mCurrentFrame.mTcw);
-                
-                // EPnP 里RANSAC后的内点的集合
+
                 set<MapPoint*> sFound;
 
                 const int np = vbInliers.size();
-                //遍历所有内点
+
                 for(int j=0; j<np; j++)
                 {
                     if(vbInliers[j])
@@ -2211,95 +2083,70 @@ bool Tracking::Relocalization()
                         mCurrentFrame.mvpMapPoints[j]=NULL;
                 }
 
-                // 只优化位姿,不优化地图点的坐标，返回的是内点的数量
                 int nGood = Optimizer::PoseOptimization(&mCurrentFrame);
-
-                // 如果优化之后的内点数目不多，跳过了当前候选关键帧,但是却没有放弃当前帧的重定位
+                cout<<"ngood is "<<nGood<<endl;
                 if(nGood<10)
                     continue;
 
-                // 删除外点对应的地图点
                 for(int io =0; io<mCurrentFrame.N; io++)
                     if(mCurrentFrame.mvbOutlier[io])
                         mCurrentFrame.mvpMapPoints[io]=static_cast<MapPoint*>(NULL);
 
                 // If few inliers, search by projection in a coarse window and optimize again
-                // Step 4.3：如果内点较少，则通过投影的方式对之前未匹配的点进行匹配，再进行优化求解
-                // 前面的匹配关系是用词袋匹配过程得到的
                 if(nGood<50)
                 {
-                    // 通过投影的方式将关键帧中未匹配的地图点投影到当前帧中, 生成新的匹配
-                    int nadditional = matcher2.SearchByProjection(
-                        mCurrentFrame,          //当前帧
-                        vpCandidateKFs[i],      //关键帧
-                        sFound,                 //已经找到的地图点集合，不会用于PNP
-                        10,                     //窗口阈值，会乘以金字塔尺度
-                        100);                   //匹配的ORB描述子距离应该小于这个阈值
+                    int nadditional = matcher2.SearchByProjection(mCurrentFrame, vpCandidateKFs[i], sFound, 10, 100);
 
-                    // 如果通过投影过程新增了比较多的匹配特征点对
                     if(nadditional+nGood>=50)
                     {
-                        // 根据投影匹配的结果，再次采用3D-2D pnp BA优化位姿
                         nGood = Optimizer::PoseOptimization(&mCurrentFrame);
 
                         // If many inliers but still not enough, search by projection again in a narrower window
                         // the camera has been already optimized with many points
-                        // Step 4.4：如果BA后内点数还是比较少(<50)但是还不至于太少(>30)，可以挽救一下, 最后垂死挣扎 
-                        // 重新执行上一步 4.3的过程，只不过使用更小的搜索窗口
-                        // 这里的位姿已经使用了更多的点进行了优化,应该更准，所以使用更小的窗口搜索
                         if(nGood>30 && nGood<50)
                         {
-                            // 用更小窗口、更严格的描述子阈值，重新进行投影搜索匹配
                             sFound.clear();
                             for(int ip =0; ip<mCurrentFrame.N; ip++)
                                 if(mCurrentFrame.mvpMapPoints[ip])
                                     sFound.insert(mCurrentFrame.mvpMapPoints[ip]);
-                            nadditional =matcher2.SearchByProjection(
-                                mCurrentFrame,          //当前帧
-                                vpCandidateKFs[i],      //候选的关键帧
-                                sFound,                 //已经找到的地图点，不会用于PNP
-                                3,                      //新的窗口阈值，会乘以金字塔尺度
-                                64);                    //匹配的ORB描述子距离应该小于这个阈值
+                            nadditional =matcher2.SearchByProjection(mCurrentFrame,vpCandidateKFs[i],sFound,3,64);
 
                             // Final optimization
-                            // 如果成功挽救回来，匹配数目达到要求，最后BA优化一下
                             if(nGood+nadditional>=50)
                             {
                                 nGood = Optimizer::PoseOptimization(&mCurrentFrame);
-                                //更新地图点
+
                                 for(int io =0; io<mCurrentFrame.N; io++)
                                     if(mCurrentFrame.mvbOutlier[io])
                                         mCurrentFrame.mvpMapPoints[io]=NULL;
                             }
-                            //如果还是不能够满足就放弃了
                         }
                     }
                 }
+                cout<<"ngood is "<<nGood<<endl;
 
                 // If the pose is supported by enough inliers stop ransacs and continue
-                // 如果对于当前的候选关键帧已经有足够的内点(50个)了,那么就认为重定位成功
                 if(nGood>=50)
                 {
                     bMatch = true;
-                    // 只要有一个候选关键帧重定位成功，就退出循环，不考虑其他候选关键帧了
                     break;
                 }
             }
-        }//一直运行,知道已经没有足够的关键帧,或者是已经有成功匹配上的关键帧
+        }
     }
 
-    // 折腾了这么久还是没有匹配上，重定位失败
     if(!bMatch)
     {
+        cout<<"reloc not ok"<<endl;
         return false;
     }
     else
     {
-        // 如果匹配上了,说明当前帧重定位成功了(当前帧已经有了自己的位姿)
-        // 记录成功重定位帧的id，防止短时间多次重定位
+        cout<<"reloc ok"<<endl;
         mnLastRelocFrameId = mCurrentFrame.mnId;
         return true;
     }
+
 }
 
 //整个追踪线程执行复位操作

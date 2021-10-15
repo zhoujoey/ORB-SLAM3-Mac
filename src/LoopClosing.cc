@@ -377,14 +377,14 @@ bool LoopClosing::NewDetectCommonRegions()
     //-------------
     //TODO: This is only necessary if we use a minimun score for pick the best candidates
     const vector<KeyFrame*> vpConnectedKeyFrames = mpCurrentKF->GetVectorCovisibleKeyFrames();
-    const DBoW2::BowVector &CurrentBowVec = mpCurrentKF->mBowVec;
+    const DBoW3::BowVector &CurrentBowVec = mpCurrentKF->mBowVec;
     /*float minScore = 1;
     for(size_t i=0; i<vpConnectedKeyFrames.size(); i++)
     {
         KeyFrame* pKF = vpConnectedKeyFrames[i];
         if(pKF->isBad())
             continue;
-        const DBoW2::BowVector &BowVec = pKF->mBowVec;
+        const DBoW3::BowVector &BowVec = pKF->mBowVec;
 
         float score = mpORBVocabulary->score(CurrentBowVec, BowVec);
 

@@ -3,15 +3,12 @@
 
 #include <vector>
 
-#include "Thirdparty/DBoW2/DBoW2/BowVector.h"
-#include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
-
 #include "ImuTypes.h"
 #include "ORBVocabulary.h"
 
 #include <mutex>
 #include <opencv2/opencv.hpp>
-
+using namespace std;
 namespace ORB_SLAM2
 {
 	
@@ -172,7 +169,7 @@ public:
      * @param[in] maxLevel              最大金字塔层级
      * @return vector<size_t>           返回搜索到的候选匹配点id
      */
-    vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1) const;
+    std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1) const;
 
     // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
     /**
@@ -286,10 +283,10 @@ public:
     // Bag of Words Vector structures.
     // 内部实际存储的是std::map<WordId, WordValue>
     // WordId 和 WordValue 表示Word在叶子中的id 和权重
-    DBoW2::BowVector mBowVec;
+    DBoW3::BowVector mBowVec;
     // 内部实际存储 std::map<NodeId, std::vector<unsigned int> >
     // NodeId 表示节点id，std::vector<unsigned int> 中实际存的是该节点id下所有特征点在图像中的索引
-    DBoW2::FeatureVector mFeatVec;
+    DBoW3::FeatureVector mFeatVec;
 
     // ORB descriptor, each row associated to a keypoint.
     /// 左目摄像头和右目摄像头特征点对应的描述子

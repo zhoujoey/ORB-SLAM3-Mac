@@ -1,6 +1,5 @@
 #include "Initializer.h"
 
-#include "Thirdparty/DBoW2/DUtils/Random.h"
 #include "Optimizer.h"
 #include "ORBmatcher.h"
 
@@ -111,8 +110,6 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
     mvSets = vector< vector<size_t> >(mMaxIterations,		//最大的RANSAC迭代次数
 									  vector<size_t>(8,0));	//这个则是第二维元素的初始值，也就是第一维。这里其实也是一个第一维的构造函数，第一维vector有8项，每项的初始值为0.
 
-	//用于进行随机数据样本采样，设置随机数种子
-    DUtils::Random::SeedRandOnce(0);
 
 	//开始每一次的迭代 
     for(int it=0; it<mMaxIterations; it++)
@@ -125,7 +122,7 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
         for(size_t j=0; j<8; j++)
         {
             // 随机产生一对点的id,范围从0到N-1
-            int randi = DUtils::Random::RandomInt(0,vAvailableIndices.size()-1);
+            int randi = rand() % vAvailableIndices.size();
             // idx表示哪一个索引对应的特征点对被选中
             int idx = vAvailableIndices[randi];
 			

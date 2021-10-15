@@ -64,6 +64,11 @@
     "random": "cpp",
     "string": "cpp",
     "string_view": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "compare": "cpp",
+    "concepts": "cpp",
+    "numbers": "cpp",
+    "semaphore": "cpp",
+    "stop_token": "cpp"
   }
 }
